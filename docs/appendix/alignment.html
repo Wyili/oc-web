@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>能力对照说明 · opencode 运行时文档</title>
+<title>能力综合对照 · opencode 运行时文档</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -19,18 +19,226 @@
 </header>
 <div class="layout">
   <aside class="sidebar" id="sidebar">
-    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li class="active"><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li class="active"><a href="../appendix/alignment.html">能力综合对照</a></li></ul></div></nav>
   </aside>
   <main class="content">
-    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 附录 <span class="sep">/</span> <span class="current">能力对照说明</span></nav>
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 附录 <span class="sep">/</span> <span class="current">能力综合对照</span></nav>
     <article class="markdown"><blockquote>
-<p>本页面向使用者，说明 opencode 定制版与内部 Agent 运行时「<strong>参考实现</strong>」的<strong>能力对应关系</strong>：哪些能力直接对齐、哪些以其他方式等价实现、哪些是本次新增。语气中性，只描述「能做什么」，不涉内部版本细节。</p>
+<p>本页面向使用者，<strong>全维度</strong>对照 opencode 定制版与内部 Agent 运行时「<strong>参考实现</strong>」：哪些能力直接对齐、哪些以其他方式等价实现、哪些存在差异（附替代方式）。</p>
+<p>判定图例：✅ <strong>对齐</strong>（含源码级确认）· 🔵 <strong>等价实现</strong>（路径不同、行为可达）· 🟡 <strong>差异/缺口</strong>（附替代方式）。语气中性，不涉内部部署细节。</p>
 </blockquote>
-<h2 id="_1">一、能力对照表</h2>
-<blockquote>
-<p>「对齐方式」含义：<strong>覆盖</strong> = 直接对应参考实现同名能力；<strong>补齐</strong> = 参考实现有、定制版本次补上；<strong>其他方式</strong> = 架构不同但以配置层等价实现；<strong>源码级确认</strong> = 运行时源码已核实行为一致。</p>
-</blockquote>
-<h3 id="_2">资产与分发</h3>
+<h2 id="23">一、总览（23 维度）</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>维度</th>
+<th>判定</th>
+<th>参考实现 → opencode 一句话对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>安装与更新</td>
+<td>🔵</td>
+<td>多平台一键脚本 → <code>bootstrap.sh</code>（拉取+部署+提示）+ <code>init.sh</code>（幂等 / 覆盖策略 / 备份），定制版源码编译</td>
+</tr>
+<tr>
+<td>2</td>
+<td>界面形态</td>
+<td>🔵</td>
+<td>终端 + Web 工作台（多面板）→ TUI 主线 + <code>opencode web</code>（server + Web 界面）/ <code>serve</code>（headless）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>模型与档位</td>
+<td>🔵</td>
+<td>轻量 / 主力 / 视觉虚拟档位 → <code>model</code> / <code>small_model</code> + <code>model: small</code> 别名 + 模型选择器</td>
+</tr>
+<tr>
+<td>4</td>
+<td>网关与 Provider</td>
+<td>🔵</td>
+<td>网关免配置绑定 → <code>provider</code> 配置 + 模型目录自动发现</td>
+</tr>
+<tr>
+<td>5</td>
+<td>子代理</td>
+<td>✅</td>
+<td>四类子代理 + 并发上限 4（1-8）→ 五类子代理 + <code>subagent_max_concurrency</code> 4（1-8）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>编排模式</td>
+<td>✅</td>
+<td>single / parallel / chain / refine 全对齐</td>
+</tr>
+<tr>
+<td>7</td>
+<td>计划引擎</td>
+<td>✅</td>
+<td>四层规划 + DAG 子计划全对齐</td>
+</tr>
+<tr>
+<td>8</td>
+<td>任务与 Todo</td>
+<td>✅</td>
+<td>goal / bug 类型 + 活跃任务锚点注入</td>
+</tr>
+<tr>
+<td>9</td>
+<td>技能系统</td>
+<td>✅</td>
+<td>加载 + 使用统计 + 触发条件（21 技能 + 插件技能 3）</td>
+</tr>
+<tr>
+<td>10</td>
+<td>工具能力</td>
+<td>✅</td>
+<td>16 个原生工具覆盖参考实现工具域</td>
+</tr>
+<tr>
+<td>11</td>
+<td>工作流</td>
+<td>✅</td>
+<td>12 节点 DAG 全对齐</td>
+</tr>
+<tr>
+<td>12</td>
+<td>评估</td>
+<td>✅</td>
+<td>8 类 gate + 评估策略 + trials（消随机）</td>
+</tr>
+<tr>
+<td>13</td>
+<td>上下文工程</td>
+<td>✅</td>
+<td>AGENTS 扫描 / SYSTEM.md / APPEND_SYSTEM.md（源码级确认）</td>
+</tr>
+<tr>
+<td>14</td>
+<td>记忆与场景</td>
+<td>✅</td>
+<td><code>memory</code> + <code>workscene</code>（含 requirements 分类）</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Token 经济</td>
+<td>✅</td>
+<td>分档 / 隔离 / 截断 / 压缩 / 并发上限 / 度量 / 缓存 全谱对应</td>
+</tr>
+<tr>
+<td>16</td>
+<td>工作区隔离</td>
+<td>✅</td>
+<td>worktree create / merge / remove（守护语义对齐）</td>
+</tr>
+<tr>
+<td>17</td>
+<td>凭据与权限</td>
+<td>🔵</td>
+<td>四档审批模式 → per-tool allow/ask/deny 等价；加密 env 对齐</td>
+</tr>
+<tr>
+<td>18</td>
+<td>通知与后台</td>
+<td>✅</td>
+<td>后台任务退出码 + 桌面通知 + 飞书通知三件套</td>
+</tr>
+<tr>
+<td>19</td>
+<td>资产分发</td>
+<td>✅</td>
+<td>5 类资产 + meta + 三层查找 + 镜像 / 搜索 / 依赖解析</td>
+</tr>
+<tr>
+<td>20</td>
+<td>文档与知识</td>
+<td>✅</td>
+<td>知识库 → 25 页文档站 + 双册仓库文档（公开手册 + 内部补充）</td>
+</tr>
+<tr>
+<td>21</td>
+<td>多工作区托管</td>
+<td>🟡</td>
+<td>中心 daemon（注册 / 托管 / 自启）→ 无对应；<code>serve</code> + systemd 自行编排</td>
+</tr>
+<tr>
+<td>22</td>
+<td>专用 Agent</td>
+<td>🟡</td>
+<td>业务管线专用 Agent → 未对应（按需自建）</td>
+</tr>
+<tr>
+<td>23</td>
+<td>反馈上报</td>
+<td>🔵</td>
+<td>远程反馈系统 → <code>/feedback</code> + 可选 webhook（默认本地保存）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_1">二、分组明细</h2>
+<h3 id="_2">安装与界面</h3>
+<table>
+<thead>
+<tr>
+<th>参考实现能力</th>
+<th>opencode 实现</th>
+<th>对齐方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>多平台一键安装</td>
+<td><code>bootstrap.sh</code>（拉取 + 部署 + 隐私提示）+ <code>init.sh</code>（初始化 / 编译 / 自检）</td>
+<td>覆盖（Linux 主线）</td>
+</tr>
+<tr>
+<td>图形界面</td>
+<td><code>opencode web</code>（启动 server 并打开 Web 界面）；<code>opencode serve</code>（headless，供 API / 桥接）</td>
+<td>等价（形态不同）</td>
+</tr>
+<tr>
+<td>密钥加密存储</td>
+<td><code>env-store</code>（AES-256-GCM）+ <code>secrets.env</code>（bashrc / systemd 注入）</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>更新与重编译</td>
+<td><code>git pull</code> + <code>opencode init --build</code>；<code>init.sh</code> 幂等可重跑</td>
+<td>覆盖</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_3">模型与网关</h3>
+<table>
+<thead>
+<tr>
+<th>参考实现能力</th>
+<th>opencode 实现</th>
+<th>对齐方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型分档（轻量 / 主力 / 视觉）</td>
+<td><code>small_model</code>（轻任务与子代理）+ <code>model</code>（主力）+ <code>model: small</code> 别名；视觉直连多模态模型</td>
+<td>等价（无虚拟档位）</td>
+</tr>
+<tr>
+<td>模型目录自动发现</td>
+<td>provider 模型发现（<code>/models</code> 端点）+ 模型选择器 tabs</td>
+<td>等价</td>
+</tr>
+<tr>
+<td>网关免配置接入</td>
+<td><code>provider</code> 字段手工配置（<code>{env:XXX}</code> 引用凭据）</td>
+<td>等价（无自动绑定）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">资产与分发</h3>
 <table>
 <thead>
 <tr>
@@ -62,7 +270,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_3">计划与任务</h3>
+<h3 id="_5">计划与任务</h3>
 <table>
 <thead>
 <tr>
@@ -73,7 +281,7 @@
 </thead>
 <tbody>
 <tr>
-<td>计划引擎（<code>/plan</code> + <code>/run</code> 双阶段）</td>
+<td>计划引擎（双阶段 /plan + /run）</td>
 <td>opencode 原生 <code>/plan</code> + <code>plan</code> 工具</td>
 <td>覆盖</td>
 </tr>
@@ -99,7 +307,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_4">子代理与编排</h3>
+<h3 id="_6">子代理与编排</h3>
 <table>
 <thead>
 <tr>
@@ -124,7 +332,7 @@
 <blockquote>
 <p>子代理的并发上限与「轻活走小模型」是定制版新增能力，见下文「本次新增能力」。</p>
 </blockquote>
-<h3 id="_5">上下文与提示词</h3>
+<h3 id="_7">上下文与提示词</h3>
 <table>
 <thead>
 <tr>
@@ -141,7 +349,7 @@
 </tr>
 <tr>
 <td>SYSTEM.md 替换 / APPEND_SYSTEM.md 追加</td>
-<td>opencode 原生</td>
+<td>opencode 原生（查找顺序一致）</td>
 <td>覆盖</td>
 </tr>
 <tr>
@@ -166,7 +374,49 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_6">工作流、评估与统计</h3>
+<h3 id="token">Token 经济</h3>
+<table>
+<thead>
+<tr>
+<th>参考实现能力</th>
+<th>opencode 实现</th>
+<th>对齐方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型分档（轻活用轻量档）</td>
+<td><code>small_model</code> + <code>model: small</code> 子代理别名</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>子代理独立上下文</td>
+<td><code>task</code> 子代理独立会话，仅结论回传主会话</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>工具输出截断 / 落盘</td>
+<td><code>tool_output.max_lines / max_bytes</code>，超限写文件 + 预览</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>上下文压缩</td>
+<td>自动压缩（预算触发）+ <code>/compact</code>；私有模型由 <code>init.sh</code> 注入有效预算</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>用量度量</td>
+<td><code>opencode stats</code> + 评估 <code>cost_under / latency_under / turns_under</code> 门禁</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>提示词缓存友好</td>
+<td>Context Epoch 保持系统提示基线稳定（利于 provider 缓存命中）</td>
+<td>增强</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_8">工作流、评估与统计</h3>
 <table>
 <thead>
 <tr>
@@ -198,7 +448,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_7">插件、权限与配置</h3>
+<h3 id="_9">插件、权限与配置</h3>
 <table>
 <thead>
 <tr>
@@ -260,8 +510,35 @@
 </tr>
 </tbody>
 </table>
+<h3 id="_10">通知与运维</h3>
+<table>
+<thead>
+<tr>
+<th>参考实现能力</th>
+<th>opencode 实现</th>
+<th>对齐方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>后台任务完成通知</td>
+<td><code>background-task</code>：输出落盘 + <code>exit_code</code> / <code>finished_at</code> + 桌面通知（<code>notify-send</code>）</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>飞书通知 / 远程交互</td>
+<td><code>feishu_notify</code> 工具 + oc-lark 桥接（独立服务）</td>
+<td>覆盖</td>
+</tr>
+<tr>
+<td>多工作区托管</td>
+<td>无中心 daemon；<code>serve</code> 单实例 + systemd 自行编排（见「差异与缺口」）</td>
+<td>差异</td>
+</tr>
+</tbody>
+</table>
 <hr />
-<h2 id="_8">二、本次新增能力</h2>
+<h2 id="_11">三、本次新增能力</h2>
 <table>
 <thead>
 <tr>
@@ -303,7 +580,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_9">新增能力速览（一句话）</h3>
+<h3 id="_12">新增能力速览（一句话）</h3>
 <ul>
 <li><strong>省 token</strong>：探索走小模型（<code>model: small</code>），并行有上限（<code>subagent_max_concurrency</code>）；</li>
 <li><strong>更安全</strong>：worktree 合并走 fast-forward 且冲突自动 abort，删除有守护；</li>
@@ -312,7 +589,7 @@
 <li><strong>更诚实</strong>：调试与目标澄清技能强制区分事实与假设、标注信心。</li>
 </ul>
 <hr />
-<h2 id="_10">三、以「其他方式」实现的差异点</h2>
+<h2 id="_13">四、以「其他方式」实现的差异点</h2>
 <p>以下能力参考实现有独立机制，定制版通过<strong>配置层</strong>等价实现（行为可达，实现路径不同）：</p>
 <table>
 <thead>
@@ -346,14 +623,57 @@
 </tbody>
 </table>
 <hr />
-<h2 id="_11">四、边界说明</h2>
+<h2 id="_14">五、差异与缺口</h2>
+<table>
+<thead>
+<tr>
+<th>缺口</th>
+<th>说明</th>
+<th>替代方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>多工作区托管</td>
+<td>无中心 daemon（注册 / 托管 / 开机自启）</td>
+<td><code>serve</code> 单实例 + systemd 单元自行编排</td>
+</tr>
+<tr>
+<td>模型虚拟档位</td>
+<td>无「轻量 / 主力 / 视觉」三档位绑定</td>
+<td><code>small_model</code> + <code>model: small</code> 近似轻量档；视觉选多模态模型</td>
+</tr>
+<tr>
+<td>Web 工作台面板</td>
+<td>面板构成与深度未逐一比对</td>
+<td>TUI 主线；<code>todo</code> / <code>plan</code> 工具近似「待办计划」</td>
+</tr>
+<tr>
+<td>快捷启动生成器</td>
+<td>无引导式「Browse → Install」生成启动脚本</td>
+<td>资产 <code>pull</code> + <code>@launcher/*</code> + <code>asset run</code></td>
+</tr>
+<tr>
+<td>网关免配置绑定</td>
+<td>无首用绑定与目录自动刷新</td>
+<td><code>provider</code> 手工配置 + 模型目录发现</td>
+</tr>
+<tr>
+<td>平台覆盖</td>
+<td>一键脚本面向 Linux</td>
+<td>macOS / Windows 按需补平台分支或手动步骤</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_15">六、边界说明</h2>
 <ul>
-<li><strong>对齐结论</strong>：参考实现文档中的功能点，定制版均有对应实现（覆盖 / 源码级确认 / 其他方式等价实现三类）。</li>
+<li><strong>对齐结论</strong>：参考实现功能点在<strong>维度级</strong>均有对应（✅ 15 / 🔵 6 / 🟡 2），缺口均附替代方式、按需补充。</li>
 <li><strong>内部资产与公开资产分离</strong>：内部专用资产与公开通用资产分开管理，本仓库只承载公开通用能力；受隐私红线约束，含组织信息的文档不进入公开仓库。</li>
 <li><strong>命名</strong>：文档统一用「参考实现」指代内部 Agent 运行时，不出现内部域名、主机名与人员信息。</li>
 <li><strong>工具命名约定</strong>：单文件单工具（<code>tool({ description, args, execute })</code>）+ CLI 入口（<code>bin/&lt;name&gt;</code> 由 <code>init.sh</code> 生成）。</li>
 </ul>
-<p>相关阅读：<a href="../core/models.html">模型配置</a>、<a href="../core/subagents.html">子代理与编排</a>、<a href="../core/eval.html">评估系统</a>、<a href="../core/worktree.html">隔离执行与 worktree</a>、<a href="../core/background.html">后台任务与通知</a>。</p></article>
+<p>相关阅读：<a href="../core/models.html">模型配置</a>、<a href="../core/subagents.html">子代理与编排</a>、<a href="../core/eval.html">评估系统</a>、<a href="../core/worktree.html">隔离执行与 worktree</a>、<a href="../core/background.html">后台任务与通知</a>、<a href="../core/token-economy.html">省 token</a>。</p></article>
     <nav class="pager">
       <a class="pager-link prev" href="../appendix/commands.html"><span>← 上一篇</span><strong>命令速查</strong></a>
       <span class="pager-spacer"></span>
@@ -364,21 +684,27 @@
       <div class="toc-title">本页目录</div>
       <div class="toc">
 <ul>
-<li><a href="#_1">一、能力对照表</a><ul>
-<li><a href="#_2">资产与分发</a></li>
-<li><a href="#_3">计划与任务</a></li>
-<li><a href="#_4">子代理与编排</a></li>
-<li><a href="#_5">上下文与提示词</a></li>
-<li><a href="#_6">工作流、评估与统计</a></li>
-<li><a href="#_7">插件、权限与配置</a></li>
+<li><a href="#23">一、总览（23 维度）</a></li>
+<li><a href="#_1">二、分组明细</a><ul>
+<li><a href="#_2">安装与界面</a></li>
+<li><a href="#_3">模型与网关</a></li>
+<li><a href="#_4">资产与分发</a></li>
+<li><a href="#_5">计划与任务</a></li>
+<li><a href="#_6">子代理与编排</a></li>
+<li><a href="#_7">上下文与提示词</a></li>
+<li><a href="#token">Token 经济</a></li>
+<li><a href="#_8">工作流、评估与统计</a></li>
+<li><a href="#_9">插件、权限与配置</a></li>
+<li><a href="#_10">通知与运维</a></li>
 </ul>
 </li>
-<li><a href="#_8">二、本次新增能力</a><ul>
-<li><a href="#_9">新增能力速览（一句话）</a></li>
+<li><a href="#_11">三、本次新增能力</a><ul>
+<li><a href="#_12">新增能力速览（一句话）</a></li>
 </ul>
 </li>
-<li><a href="#_10">三、以「其他方式」实现的差异点</a></li>
-<li><a href="#_11">四、边界说明</a></li>
+<li><a href="#_13">四、以「其他方式」实现的差异点</a></li>
+<li><a href="#_14">五、差异与缺口</a></li>
+<li><a href="#_15">六、边界说明</a></li>
 </ul>
 </div>
 
