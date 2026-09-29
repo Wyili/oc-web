@@ -6,11 +6,13 @@ opencode 相关网页的统一静态托管（GitHub Pages）。
 
 ## 站点结构
 
-| 路径 | 内容 | 维护方式 |
+| 仓库路径 | 在线地址 | 内容 |
 |---|---|---|
-| `/` | 入口页（站点导航） | `index.html`，单文件直接编辑 |
-| `/oc-lark/` | oc-lark 展示页（飞书 × OpenCode 连接服务官网） | `oc-lark/index.html`，单文件直接编辑 |
-| `/docs/` | opencode 运行时使用手册（25 页） | 由配套构建脚本整目录同步覆盖 |
+| `index.html` | <https://wyili.github.io/oc-web/> | 入口页（站点导航） |
+| `oc-lark/index.html` | <https://wyili.github.io/oc-web/oc-lark/> | oc-lark 展示页（飞书 × OpenCode 连接服务） |
+| `docs/`（25 页，自 `docs/index.html` 起） | <https://wyili.github.io/oc-web/docs/> | opencode 运行时使用手册 |
+
+> 在 GitHub 上点开 `.html` 文件只能看到**源码**（GitHub 不渲染 HTML 页面）；浏览网页效果请打开上表对应的在线地址。
 
 ## 维护说明
 
