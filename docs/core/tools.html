@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自定义工具 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li class="active"><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 核心能力 <span class="sep">/</span> <span class="current">自定义工具</span></nav>
+    <article class="markdown"><blockquote>
+<p>定制版在 <code>.opencode/tool/</code> 内置 <strong>16 个自定义工具</strong>，随会话自动注册——对话中让 AI 直接调用即可，多数还提供等价的 CLI wrapper（不经过 LLM）。它们把团队需要的运行时能力（计划、编排、统计、安全、通信）沉淀为可复用的原生工具。</p>
+</blockquote>
+<h2 id="_1">一、调用方式</h2>
+<table>
+<thead>
+<tr>
+<th>入口</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>对话内</td>
+<td>让 AI 调用工具（如「用 plan 创建计划」），由模型决定参数</td>
+</tr>
+<tr>
+<td>CLI wrapper</td>
+<td><code>init.sh</code> 为多数工具生成 <code>~/.config/opencode/bin/&lt;name&gt;</code>，可直接在终端调用</td>
+</tr>
+<tr>
+<td>TUI 命令</td>
+<td>部分工具有对应的斜杠命令（见 <a href="../appendix/commands.html">命令速查</a>）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>.opencode/tool/*.ts</code> 由 opencode 目录扫描自动注册，无需在配置里声明；新增文件后 <code>/reload</code> 即可生效。</p>
+</blockquote>
+<p>带 CLI 入口（可直接在终端调用、不经过 LLM）的工具：</p>
+<pre><code class="language-bash">asset list / pull / setup / run / push / export / status   # 资产
+plan init / write / sub / status / run / update            # 计划
+privacy scan / git / mask / words                          # 隐私
+skill-usage list / clear                                   # 技能统计
+feishu-notify send &quot;&lt;内容&gt;&quot; [--title 标题]                 # 飞书通知
+asset new @type/name                                       # 新建资产模板
+</code></pre>
+<h2 id="_2">二、按能力分组</h2>
+<h3 id="_3">编排与执行</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>一句话</th>
+<th>关键操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>background_task</code></td>
+<td>长命令后台执行，日志落盘 + 完成通知</td>
+<td><code>start -- &lt;命令&gt;</code> / <code>list</code> / <code>output &lt;id&gt;</code> / <code>stop &lt;id&gt;</code></td>
+</tr>
+<tr>
+<td><code>git_worktree</code></td>
+<td>git worktree 沙箱隔离开发</td>
+<td><code>create --branch &lt;名&gt;</code> / <code>list</code> / <code>remove &lt;path&gt;</code></td>
+</tr>
+<tr>
+<td><code>cron</code></td>
+<td>定时提醒记录（跨会话上下文注入）</td>
+<td><code>create &lt;cron&gt; &lt;内容&gt;</code> / <code>list</code> / <code>delete &lt;id&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">计划与任务</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>一句话</th>
+<th>关键操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plan</code></td>
+<td>计划引擎：四层规划 + DAG 子计划依赖</td>
+<td><code>init</code> / <code>write &lt;id&gt; &lt;section&gt;</code> / <code>sub</code> / <code>status</code> / <code>run</code> / <code>update</code></td>
+</tr>
+<tr>
+<td><code>task_manager</code></td>
+<td>任务管理：状态流 + 依赖 + 活跃任务注入</td>
+<td><code>create &lt;标题&gt; [--type goal\|bug]</code> / <code>update &lt;id&gt; --status</code> / <code>list</code> / <code>get &lt;id&gt;</code></td>
+</tr>
+<tr>
+<td><code>todo</code></td>
+<td>Markdown todo（goal / bug，跨会话）</td>
+<td><code>add title="…" type=&lt;goal\|bug&gt;</code> / <code>list</code> / <code>activate slug=…</code></td>
+</tr>
+</tbody>
+</table>
+<p>详见 <a href="plan-todo.html">计划与 Todo</a>。</p>
+<h3 id="_5">流程与质量</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>一句话</th>
+<th>关键操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workflow_runner</code></td>
+<td>DAG 工作流引擎（12 种节点）</td>
+<td><code>list</code> / <code>validate &lt;名&gt;</code> / <code>run &lt;名&gt; key=value</code></td>
+</tr>
+<tr>
+<td><code>eval_runner</code></td>
+<td>Agent 质量评估（真实执行 + 反馈循环）</td>
+<td><code>init -g &lt;组&gt;</code> / <code>run -g &lt;组&gt;</code> / <code>report</code> / <code>compare</code> / <code>analyze</code> / <code>baseline</code> / <code>validate</code></td>
+</tr>
+</tbody>
+</table>
+<p>详见 <a href="workflows.html">工作流</a>。</p>
+<h3 id="_6">知识与场景</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>一句话</th>
+<th>关键操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>memory</code></td>
+<td>MEMORY.md 自动记忆（索引 + 主题文件）</td>
+<td><code>list</code> / <code>add &lt;标题&gt;</code> / <code>refresh &lt;slug&gt;</code> / <code>activate &lt;slug&gt;</code></td>
+</tr>
+<tr>
+<td><code>workscene</code></td>
+<td>工作场景知识库（参考知识 + 场景记忆）</td>
+<td><code>init</code> / <code>create</code> / <code>activate</code> / <code>status</code> / <code>show</code> / <code>find</code> / <code>archive</code> / <code>memory</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_7">资产分发</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>一句话</th>
+<th>关键操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asset_manager</code></td>
+<td>从远程 Git 仓库拉取/推送/部署/运行资产</td>
+<td><code>list</code> / <code>info</code> / <code>pull</code> / <code>install</code> / <code>push</code> / <code>status</code> / <code>search</code> / <code>setup</code> / <code>run</code> / <code>export</code></td>
+</tr>
+<tr>
+<td><code>new_asset</code></td>
+<td>创建资产模板（agent / skill / tool / launcher / plugin）</td>
+<td>让 AI 调用，参数 <code>asset_ref</code>（如 <code>@agent/myagent</code>）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_8">安全与隐私</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>一句话</th>
+<th>关键操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>privacy</code></td>
+<td>敏感信息扫描 / 脱敏 / 敏感词清单管理</td>
+<td><code>scan &lt;path&gt;</code> / <code>git</code> / <code>mask "&lt;文本&gt;"</code> / <code>words list\|add\|delete</code></td>
+</tr>
+<tr>
+<td><code>env_store</code></td>
+<td>AES-256-GCM 加密环境变量存储</td>
+<td><code>set &lt;KEY&gt; &lt;value&gt;</code> / <code>list</code> / <code>delete &lt;KEY&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_9">观测与通信</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>一句话</th>
+<th>关键操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>skill_usage</code></td>
+<td>技能使用统计（lifecycle-hooks 自动记录）</td>
+<td><code>list [--min N]</code> / <code>clear</code></td>
+</tr>
+<tr>
+<td><code>feishu_notify</code></td>
+<td>通过 oc-lark 发飞书通知（授权 / 结果推送）</td>
+<td><code>send "&lt;内容&gt;" [--title 标题]</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>TUI 侧另有前端命令 <code>/asset_manager</code>（交互式 ✅/⬜ 列表，不经 LLM）——它是插件而非工具，见 <a href="plugins.html">插件与扩展</a>。</p>
+</blockquote>
+<h2 id="_10">三、几个易混点</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>todo</code> vs 内置 <code>todowrite</code></td>
+<td><code>todo</code> 落盘跨会话，<code>todowrite</code> 只在会话内（见 <a href="plan-todo.html">计划与 Todo</a>）</td>
+</tr>
+<tr>
+<td><code>task_manager</code> vs <code>todo</code></td>
+<td>task_manager 带状态流与依赖、活跃任务自动注入；todo 是 markdown 锚点</td>
+</tr>
+<tr>
+<td><code>asset_manager</code> vs <code>asset</code> CLI</td>
+<td>同一个资产系统的两种入口：工具（经 LLM）/ CLI wrapper（不经 LLM）</td>
+</tr>
+<tr>
+<td><code>memory</code> vs <code>workscene</code></td>
+<td>memory 是用户画像/习惯；workscene 是领域知识库与场景记忆</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_11">四、典型组合</h2>
+<p>工具很少单用，几个常见的组合套路：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>组合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>复杂重构</td>
+<td><code>plan</code>（四层规划 + 子计划）→ 委派子代理实施 → <code>workflow_runner</code> 跑测试 → <code>privacy</code> 提交前扫描</td>
+</tr>
+<tr>
+<td>长时间构建/测试</td>
+<td><code>background_task start</code> 启动 → 继续干别的 → 完成后桌面通知 / <code>output &lt;id&gt;</code> 取结果</td>
+</tr>
+<tr>
+<td>隔离实验分支</td>
+<td><code>git_worktree create</code> 建沙箱 → 在其中开发 → 验证通过后再合回主干</td>
+</tr>
+<tr>
+<td>客户问题闭环</td>
+<td><code>customer-bug</code> 技能驱动：读飞书表 → <code>feishu_notify</code> 通报 → Jira/Gerrit CLI → 关单</td>
+</tr>
+<tr>
+<td>例行发布</td>
+<td><code>workflow_runner run commit-flow</code> 或 <code>jira-submit-close</code>，把固定步骤一次跑完</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_12">五、工具输出与上下文</h2>
+<p>工具产生的大输出是上下文成本的主要来源，定制版对此有统一约束（见 <a href="token-economy.html">省 token 与上下文管理</a>）：</p>
+<ul>
+<li><strong>输出截断</strong>：超过 <code>tool_output.max_lines / max_bytes</code> 的结果写文件 + 保留头尾预览；</li>
+<li><strong>后台落盘</strong>：<code>background_task</code> 的输出写 <code>.opencode/tasks/&lt;id&gt;.log</code>，只回传退出码与通知；</li>
+<li><strong>只读结论</strong>：委派子代理时只回收最终文本，过程不进入主上下文。</li>
+</ul>
+<h2 id="_13">六、落地清单</h2>
+<ol>
+<li><strong>长命令一律进后台</strong>——构建、全量测试、监控用 <code>background_task</code>，输出落盘不占上下文；</li>
+<li><strong>加密而非明文</strong>——密钥用 <code>env_store</code>，别写进 <code>.bashrc</code>（见 <a href="security.html">凭据与权限</a>）；</li>
+<li><strong>提交前跑 <code>privacy</code></strong>——<code>privacy git</code> 等价提交前扫描；</li>
+<li><strong>复杂任务先 <code>plan</code></strong>——四层写全再执行；</li>
+<li><strong>统计复盘</strong>——<code>skill_usage</code> 与评估门禁一起看，指导裁剪与优化。</li>
+</ol>
+<blockquote>
+<p>工具与「参考实现」的能力对照见 <a href="../appendix/alignment.html">能力对照说明</a>。</p>
+</blockquote></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../core/skills.html"><span>← 上一篇</span><strong>技能系统</strong></a>
+      <a class="pager-link next" href="../core/plugins.html"><span>下一篇 →</span><strong>插件与扩展</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、调用方式</a></li>
+<li><a href="#_2">二、按能力分组</a><ul>
+<li><a href="#_3">编排与执行</a></li>
+<li><a href="#_4">计划与任务</a></li>
+<li><a href="#_5">流程与质量</a></li>
+<li><a href="#_6">知识与场景</a></li>
+<li><a href="#_7">资产分发</a></li>
+<li><a href="#_8">安全与隐私</a></li>
+<li><a href="#_9">观测与通信</a></li>
+</ul>
+</li>
+<li><a href="#_10">三、几个易混点</a></li>
+<li><a href="#_11">四、典型组合</a></li>
+<li><a href="#_12">五、工具输出与上下文</a></li>
+<li><a href="#_13">六、落地清单</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

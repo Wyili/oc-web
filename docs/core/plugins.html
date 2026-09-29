@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>插件与扩展 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li class="active"><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 核心能力 <span class="sep">/</span> <span class="current">插件与扩展</span></nav>
+    <article class="markdown"><blockquote>
+<p>插件是 opencode 的<strong>会话内扩展机制</strong>：用 TypeScript 挂接生命周期钩子，或把技能 + 命令 + 子代理打包成一个可分发单元。定制版用插件实现审计日志、使用统计、活跃任务注入、编辑后自动检查与桌面通知等横向能力。</p>
+</blockquote>
+<h2 id="_1">一、插件形态</h2>
+<p>定制版有三类插件落点：</p>
+<table>
+<thead>
+<tr>
+<th>形态</th>
+<th>位置</th>
+<th>加载方式</th>
+<th>典型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TS 钩子文件</strong></td>
+<td><code>.opencode/global/*.ts</code></td>
+<td><code>init.sh</code> 以文件级 symlink 到 <code>~/.config/opencode/plugin/</code>，自动加载</td>
+<td><code>lifecycle-hooks.ts</code></td>
+</tr>
+<tr>
+<td><strong>目录形态插件</strong></td>
+<td><code>.opencode/plugins/&lt;name&gt;/</code></td>
+<td>随 <code>skills.paths</code> 扫描，内含 <code>skills/</code> + <code>commands/</code> + <code>subAgents/</code></td>
+<td>jira / gerrit / kb（企业插件）</td>
+</tr>
+<tr>
+<td><strong>TUI 插件</strong></td>
+<td><code>.opencode/global/*.ts</code> + <code>tui.json</code> 声明</td>
+<td>文件放 <code>global/</code>，但 <strong>TUI 只认 <code>tui.json</code> 的 <code>plugin</code> 字段</strong>（不做目录扫描）</td>
+<td><code>asset-manager-tui.ts</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>单文件钩子插件是 symlink，改仓库文件即实时生效；目录形态插件随目录被发现；TUI 插件必须同时改 <code>tui.json</code>，否则不会加载。</p>
+</blockquote>
+<h2 id="_2">二、插件如何被发现</h2>
+<ul>
+<li><strong>全局钩子</strong>：<code>global/*.ts</code> 经 <code>init.sh</code> 同步为 <code>~/.config/opencode/plugin/&lt;name&gt;.ts</code>，opencode 启动时自动加载；</li>
+<li><strong>插件目录</strong>：<code>&lt;项目&gt;/.opencode/plugins/</code> 与全局插件目录由 <code>skills.paths</code> 覆盖扫描；</li>
+<li><strong>TUI 插件声明</strong>（<code>tui.json</code>）：</li>
+</ul>
+<pre><code class="language-jsonc">{
+  &quot;plugin&quot;: [
+    &quot;./global/asset-manager-tui.ts&quot;,
+    [&quot;./plugins/tui-smoke.tsx&quot;, { &quot;enabled&quot;: false }]
+  ]
+}
+</code></pre>
+<ul>
+<li><code>/plugins</code> 命令可列出当前加载的插件、技能、工具与命令；<code>/reload</code> 刷新。</li>
+</ul>
+<h2 id="_3">三、生命周期事件</h2>
+<p><code>lifecycle-hooks.ts</code> 挂接了以下钩子（对应 opencode 插件事件）：</p>
+<table>
+<thead>
+<tr>
+<th>钩子</th>
+<th>对应事件</th>
+<th>触发时机</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tool.execute.before</code></td>
+<td>PreToolUse</td>
+<td>每次工具调用前</td>
+</tr>
+<tr>
+<td><code>tool.execute.after</code></td>
+<td>PostToolUse</td>
+<td>每次工具调用后（含阻塞式日志）</td>
+</tr>
+<tr>
+<td><code>event</code></td>
+<td>Notification / 审计</td>
+<td>会话步骤结束/失败、工具失败、权限请求</td>
+</tr>
+<tr>
+<td><code>experimental.session.compacting</code></td>
+<td>session_memory_extraction</td>
+<td>上下文压缩时</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">四、钩子能力一览</h2>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>实现方式</th>
+<th>落点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>审计日志</strong></td>
+<td>每次工具调用追加一行 JSONL</td>
+<td><code>~/.config/opencode/audit.log</code></td>
+</tr>
+<tr>
+<td><strong>技能使用统计</strong></td>
+<td><code>skill</code> 工具加载时 <code>count+1</code></td>
+<td><code>~/.config/opencode/skill-usage.json</code></td>
+</tr>
+<tr>
+<td><strong>工具使用统计</strong></td>
+<td>每次工具调用计数，失败按 callID 反查补记</td>
+<td><code>~/.config/opencode/tool-usage.json</code></td>
+</tr>
+<tr>
+<td><strong>权限审计</strong></td>
+<td>监听 <code>permission.asked</code> 事件记录授权决策</td>
+<td><code>audit.log</code></td>
+</tr>
+<tr>
+<td><strong>活跃任务注入</strong></td>
+<td>压缩时读项目 <code>tasks.json</code>，把 <code>in_progress</code> 任务作为工作锚点注入</td>
+<td>会话上下文</td>
+</tr>
+<tr>
+<td><strong>会话记忆种子</strong></td>
+<td>压缩时抽取关键信息注入</td>
+<td><code>~/.config/opencode/session-memory.md</code></td>
+</tr>
+<tr>
+<td><strong>自定义检查器</strong></td>
+<td>编辑类工具执行后按文件模式跑检查命令，结果追加到工具输出</td>
+<td><code>custom-checkers.json</code></td>
+</tr>
+<tr>
+<td><strong>桌面通知</strong></td>
+<td>步骤完成/失败时 <code>notify-send</code></td>
+<td>系统通知</td>
+</tr>
+</tbody>
+</table>
+<h3 id="41">4.1 自定义检查器</h3>
+<p>对齐 LSP <code>custom_checkers</code>：编辑 <code>.py</code> 等文件后自动运行检查命令，结果对模型可见。</p>
+<pre><code class="language-jsonc">// 项目 .opencode/custom-checkers.json 或全局 ~/.config/opencode/custom-checkers.json
+[
+  { &quot;name&quot;: &quot;pyright&quot;, &quot;patterns&quot;: [&quot;**/*.py&quot;],
+    &quot;command&quot;: &quot;pyright --outputjson ${FILE}&quot;, &quot;timeout&quot;: 30 }
+]
+</code></pre>
+<ul>
+<li>触发工具：<code>edit</code> / <code>write</code> / <code>apply_patch</code>；</li>
+<li><code>${FILE}</code> 占位符替换为被编辑文件的绝对路径；</li>
+<li>项目级配置优先于全局配置。</li>
+</ul>
+<h3 id="42">4.2 通知的双通道</h3>
+<ul>
+<li><strong>TUI 内提醒</strong>：由 <code>tui.json</code> 的 <code>attention</code> 配置原生提供（通知栏 + 可选声音），无需插件代码；</li>
+<li><strong>桌面通知</strong>：由 <code>lifecycle-hooks</code> 用 <code>notify-send</code> 发送，无桌面环境时静默降级。</li>
+</ul>
+<h2 id="tui-asset-manager-tui">五、TUI 插件：<code>asset-manager-tui</code></h2>
+<p><code>asset-manager-tui.ts</code> 注册 TUI 侧 <code>/asset_manager</code> 斜杠命令，打开交互式资产列表（✅ 已拉取 / ⬜ 未拉取），选择未拉取的资产直接拉取：</p>
+<ul>
+<li><strong>纯前端直通</strong>：列表来自本地缓存 git 仓库 + <code>meta.json</code>，拉取是纯 git/文件操作，<strong>全程零 LLM</strong>；</li>
+<li><strong>声明式加载</strong>：必须在 <code>tui.json</code> 的 <code>plugin</code> 字段注册，TUI 不做目录扫描；</li>
+<li>与对话内 <code>asset_manager</code> 工具互为两种入口（见 <a href="tools.html">自定义工具</a>）。</li>
+</ul>
+<h2 id="plugin">六、插件的分发：@plugin 与资产化的区别</h2>
+<p>包成 <code>@plugin</code> 的目录既能随仓库内置，也能在远程资产仓库分发：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>@plugin</code>（会话内扩展）</th>
+<th><code>@tool</code>（独立程序）</th>
+<th>内置能力</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本质</td>
+<td>skill + 斜杠命令 + 子代理的打包</td>
+<td>独立可执行程序</td>
+<td>编译进二进制的核心能力</td>
+</tr>
+<tr>
+<td>生命周期</td>
+<td>依赖 opencode 会话加载</td>
+<td>独立进程，与会话解耦</td>
+<td>随会话</td>
+</tr>
+<tr>
+<td>分发</td>
+<td><code>asset pull</code> + <code>asset setup</code>（部署到项目）</td>
+<td><code>asset pull</code> + <code>asset run</code></td>
+<td>无需分发</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>资产化分发</strong>：远程资产仓库（<code>github.com/Wyili/opencode-assets</code>，地址在 <code>.opencode/opencode.jsonc</code> 的 <code>assets.repo</code>）；<code>asset pull</code> 拉缓存、<code>asset setup</code> 部署、<code>asset push</code> 发布；</li>
+<li><strong>内置 vs 分发边界</strong>：基础核心能力（子代理、workscene、<code>goal</code>/<code>debug</code>/<code>evaluate</code> 等自研技能）内置保留；功能类资产（docx/pdf/pptx/xlsx、jira/gerrit/kb 等）内置提交于 <code>.opencode/skills/</code> 与 <code>.opencode/plugins/</code>，同时保留在远程仓库可分发；</li>
+<li>两者的<strong>区别在形态而非来源</strong>：决定放哪个目录，看它是「会话内扩展」还是「独立程序」。</li>
+</ul>
+<h2 id="_5">七、落地清单</h2>
+<ol>
+<li><strong>横向能力用钩子</strong>——审计、统计、通知这类「每次都要做」的事，挂 <code>global/*.ts</code>，别写进提示词；</li>
+<li><strong>TUI 插件记得改 <code>tui.json</code></strong>——文件放对位置还不够，必须声明；</li>
+<li><strong>检查器按需开</strong>——<code>custom-checkers.json</code> 控制编辑后自动检查的范围与超时；</li>
+<li><strong>插件也过隐私扫描</strong>——打包分发前用 <code>privacy</code> 自检；</li>
+<li><strong>优先包成资产</strong>——可复用的插件组合走 <code>@plugin</code> 分发，而非各处手工维护。</li>
+</ol>
+<blockquote>
+<p>技能本身见 <a href="skills.html">技能系统</a>；资产操作见 <a href="tools.html">自定义工具</a> 与仓库 <code>.opencode/README.md</code>。</p>
+</blockquote></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../core/tools.html"><span>← 上一篇</span><strong>自定义工具</strong></a>
+      <a class="pager-link next" href="../core/workscene.html"><span>下一篇 →</span><strong>工作场景</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、插件形态</a></li>
+<li><a href="#_2">二、插件如何被发现</a></li>
+<li><a href="#_3">三、生命周期事件</a></li>
+<li><a href="#_4">四、钩子能力一览</a><ul>
+<li><a href="#41">4.1 自定义检查器</a></li>
+<li><a href="#42">4.2 通知的双通道</a></li>
+</ul>
+</li>
+<li><a href="#tui-asset-manager-tui">五、TUI 插件：asset-manager-tui</a></li>
+<li><a href="#plugin">六、插件的分发：@plugin 与资产化的区别</a></li>
+<li><a href="#_5">七、落地清单</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

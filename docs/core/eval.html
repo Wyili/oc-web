@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>评估系统 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li class="active"><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 核心能力 <span class="sep">/</span> <span class="current">评估系统</span></nav>
+    <article class="markdown"><blockquote>
+<p>评估系统（eval_runner）把「某能力是否仍然可用」固化成<strong>可重复执行的场景</strong>：能力改动后重跑，就能发现回归。它不走 LLM 打分兜底，而是<strong>真实执行 + 程序化门控 + 独立验证</strong>的组合，与「参考实现」的评估理念对齐。</p>
+</blockquote>
+<h2 id="_1">一、目录结构</h2>
+<pre><code class="language-text">.opencode/evals/
+├── README.md
+└── &lt;group&gt;/                     # 评估分组，如 regression/
+    ├── *.eval.yaml              # 场景定义（支持多文档 YAML）
+    └── results/                 # 运行结果（运行后自动生成）
+        ├── &lt;timestamp&gt;.json     # 每次运行的完整结果
+        └── baseline.json        # baseline 固化的基线
+</code></pre>
+<p>内置 <code>regression/</code> 是<strong>能力回归分组</strong>，放既有能力的回归基线场景。新增能力时，对应的场景就加进这里。</p>
+<h2 id="_2">二、执行机制（主代理 + 子代理编排）</h2>
+<pre><code class="language-text">① explorer 探索工作目录 → 给出探索摘要（供执行参考）
+② executor/主代理真实执行场景（opencode run）
+③ gate 程序化检查 + LLM review 评审
+④ evaluator 独立验证：目标一致性 / 方向 / 真实性（防幻觉、防跑偏）
+⑤ 未通过则带反馈重新执行（最多 trials.runs 轮）
+</code></pre>
+<p>只有 ③ 全过、④ 独立验证通过，场景才算通过；任一步失败，失败原因会作为反馈进入下一轮。需要真实 LLM 调用（<code>opencode run</code>），额度受限时可先 <code>validate</code> 做离线结构校验。</p>
+<h2 id="schema">三、场景 schema</h2>
+<p>场景文件为 YAML，字段对齐 <code>tool/eval-runner.ts</code>：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>✅</td>
+<td>场景名（唯一）</td>
+</tr>
+<tr>
+<td><code>prompt</code></td>
+<td>✅</td>
+<td>交给 Agent 执行的任务描述</td>
+</tr>
+<tr>
+<td><code>description</code> / <code>tags</code></td>
+<td></td>
+<td>说明 / 标签</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td></td>
+<td>超时，如 <code>"5m"</code></td>
+</tr>
+<tr>
+<td><code>context.working_dir_files</code></td>
+<td></td>
+<td>预置测试文件 <code>{ 相对路径: 内容 }</code></td>
+</tr>
+<tr>
+<td><code>context.working_dir</code></td>
+<td></td>
+<td><code>temp</code>（默认，OS 临时目录）或 <code>project</code>（项目内 <code>.opencode/.tmp</code>，<strong>可加载项目自定义工具</strong>）</td>
+</tr>
+<tr>
+<td><code>overrides.model</code></td>
+<td></td>
+<td>锁定评估模型</td>
+</tr>
+<tr>
+<td><code>agent</code> / <code>agents</code></td>
+<td></td>
+<td>执行子代理；<code>agents: { explore, execute, evaluate }</code> 编排流水线（默认 explorer/executor/evaluator）</td>
+</tr>
+<tr>
+<td><code>evaluation.gate</code></td>
+<td></td>
+<td>程序化门控（8 类，见下）</td>
+</tr>
+<tr>
+<td><code>evaluation.reviews</code></td>
+<td></td>
+<td>LLM 评审：<code>[{ name, criterion }]</code></td>
+</tr>
+<tr>
+<td><code>evaluation.pass_threshold</code></td>
+<td></td>
+<td>通过阈值（默认 1.0）</td>
+</tr>
+<tr>
+<td><code>trials.runs</code> / <code>trials.strategy</code></td>
+<td></td>
+<td>轮数与策略（默认 3 轮）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>validate</code> 只强制校验两个硬性字段：<code>name</code> 与 <code>prompt</code>。其余字段缺失走默认值。</p>
+</blockquote>
+<h2 id="8-gate">四、8 类 gate</h2>
+<p>gate 是<strong>程序化硬门控</strong>，比 LLM 评审更确定、更廉价：</p>
+<table>
+<thead>
+<tr>
+<th>gate</th>
+<th>关键字段</th>
+<th>判定</th>
+<th>数据来源</th>
+<th>无数据时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>output_contains</code></td>
+<td><code>pattern</code></td>
+<td>响应文本匹配正则（不区分大小写）</td>
+<td>响应文本</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>tool_called</code></td>
+<td><code>tool</code></td>
+<td>执行期间<strong>调用过</strong>指定工具</td>
+<td><code>tool_use</code> 事件</td>
+<td>失败</td>
+</tr>
+<tr>
+<td><code>no_tool_errors</code></td>
+<td>—</td>
+<td>执行期间<strong>无工具错误</strong></td>
+<td><code>tool_use</code> 状态 / message.part.error</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>file_contains</code></td>
+<td><code>path</code> + <code>pattern</code></td>
+<td>工作目录下 <code>path</code> 文件内容匹配正则</td>
+<td>场景工作目录文件</td>
+<td>失败</td>
+</tr>
+<tr>
+<td><code>command_passes</code></td>
+<td><code>command</code></td>
+<td>在场景工作目录执行命令、<strong>exit 0</strong></td>
+<td><code>execSync</code>（超时 120s）</td>
+<td>失败</td>
+</tr>
+<tr>
+<td><code>latency_under</code></td>
+<td><code>ms</code></td>
+<td>总耗时 &lt; 阈值</td>
+<td>真实运行墙钟时间</td>
+<td>通过（跳过）</td>
+</tr>
+<tr>
+<td><code>turns_under</code></td>
+<td><code>count</code></td>
+<td>assistant 轮次 &lt; 阈值</td>
+<td><code>step_finish</code> 事件计数（缺失时按 messageID 估算）</td>
+<td>通过（跳过）</td>
+</tr>
+<tr>
+<td><code>cost_under</code></td>
+<td><code>usd</code></td>
+<td>累计成本（USD）&lt; 阈值</td>
+<td><code>step_finish</code> 事件累计 <code>cost</code></td>
+<td>通过（跳过）</td>
+</tr>
+</tbody>
+</table>
+<p>要点：</p>
+<ul>
+<li><code>latency_under</code> / <code>turns_under</code> / <code>cost_under</code> 在<strong>取不到数据时跳过（判通过）</strong>，避免误判——但它们只在真实运行路径生效，mock 路径统一模拟通过；</li>
+<li>涉及项目自定义工具（<code>todo</code> / <code>task_manager</code> 等）的场景<strong>必须</strong> <code>context.working_dir: project</code>，否则场景在 OS 临时目录运行、加载不到项目 <code>.opencode/tool/</code>，<code>tool_called</code> 必然失败；</li>
+<li>回归场景建议：<code>trials.runs: 1</code> + <code>strategy: pass_at_k</code>，gate 用 <code>tool_called</code> + <code>no_tool_errors</code> 做硬性链路检查，review 判内容质量。</li>
+</ul>
+<h2 id="trials">五、trials 与策略</h2>
+<table>
+<thead>
+<tr>
+<th>strategy</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pass_at_k</code></td>
+<td>任一轮通过即停（默认；轻量、贴近确定性）</td>
+</tr>
+<tr>
+<td><code>pass_pow_k</code></td>
+<td>全部跑完后「多数通过」（pass 比例 ≥ 阈值）</td>
+</tr>
+<tr>
+<td><code>mean</code></td>
+<td>全部跑完后按平均分达标</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">六、最小示例</h2>
+<pre><code class="language-yaml"># .opencode/evals/regression/demo.eval.yaml
+name: demo-read-report
+description: &quot;agent 读取文件并准确报告内容&quot;
+tags: [regression, demo]
+timeout: &quot;5m&quot;
+
+context:
+  working_dir: project            # 需加载项目自定义工具时必须
+  working_dir_files:
+    &quot;hello.txt&quot;: &quot;Hello, World!&quot;
+
+prompt: |
+  读取 hello.txt 文件，告诉我其中写了什么。
+
+evaluation:
+  gate:
+    - type: output_contains
+      pattern: &quot;Hello, World!&quot;
+    - type: no_tool_errors
+    - type: turns_under
+      count: 6
+    - type: cost_under
+      usd: 0.05
+  reviews:
+    - name: goal-alignment
+      criterion: &quot;输出真正达成了任务目标，方向正确，无跑偏&quot;
+    - name: accuracy
+      criterion: &quot;准确识别了文件内容，没有错误或遗漏&quot;
+  pass_threshold: 0.7
+
+trials:
+  runs: 1
+  strategy: pass_at_k
+</code></pre>
+<h2 id="_4">七、常用命令</h2>
+<p><code>eval_runner</code> 是自定义工具（无独立 shell 二进制），在会话中让 AI 调用：</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eval_runner init -g &lt;group&gt;</code></td>
+<td>初始化评估目录（生成 <code>results/</code> 与示例场景）</td>
+</tr>
+<tr>
+<td><code>eval_runner validate -g &lt;group&gt;</code></td>
+<td>仅校验场景 YAML（不改状态，离线可跑）</td>
+</tr>
+<tr>
+<td><code>eval_runner run -g &lt;group&gt;</code></td>
+<td>真实执行评估（写 <code>results/&lt;timestamp&gt;.json</code>）</td>
+</tr>
+<tr>
+<td><code>eval_runner report</code></td>
+<td>查看最新报告</td>
+</tr>
+<tr>
+<td><code>eval_runner analyze [--head &lt;ts&gt;] [--base &lt;ts&gt;]</code></td>
+<td>结构化分析（未给 base 时对最近一次单次分析）</td>
+</tr>
+<tr>
+<td><code>eval_runner compare --base &lt;ts&gt; --head &lt;ts&gt;</code></td>
+<td>对比两次运行（新增通过 / 回归失败 / 通过率变化）</td>
+</tr>
+<tr>
+<td><code>eval_runner baseline</code></td>
+<td>把最新结果固化为基线（<code>results/baseline.json</code>）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">八、工作流建议</h2>
+<ol>
+<li>为一项能力写<strong>一个</strong>场景：<code>name</code> + <code>prompt</code> 描述清楚要验证什么；</li>
+<li>能用 gate 检查的绝不用 review——链路用 <code>tool_called</code>，产物用 <code>file_contains</code>，质量用 <code>command_passes</code>，成本/时长/轮次用 <code>*_under</code>；</li>
+<li>本地 <code>validate</code> 先过语法，再 <code>run</code> 真实执行；</li>
+<li>结果满意后 <code>baseline</code> 固化，后续能力改动前后用 <code>analyze</code> / <code>compare</code> 观察回归；</li>
+<li>评估门禁与省 token 互为补充：<code>cost_under</code> / <code>latency_under</code> / <code>turns_under</code> 防止「答对但烧钱」（见<a href="token-economy.html">省 token 与上下文管理</a>）。</li>
+</ol></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../core/workscene.html"><span>← 上一篇</span><strong>工作场景</strong></a>
+      <a class="pager-link next" href="../core/security.html"><span>下一篇 →</span><strong>凭据与权限</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、目录结构</a></li>
+<li><a href="#_2">二、执行机制（主代理 + 子代理编排）</a></li>
+<li><a href="#schema">三、场景 schema</a></li>
+<li><a href="#8-gate">四、8 类 gate</a></li>
+<li><a href="#trials">五、trials 与策略</a></li>
+<li><a href="#_3">六、最小示例</a></li>
+<li><a href="#_4">七、常用命令</a></li>
+<li><a href="#_5">八、工作流建议</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

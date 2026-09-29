@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>计划与 Todo · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li class="active"><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 核心能力 <span class="sep">/</span> <span class="current">计划与 Todo</span></nav>
+    <article class="markdown"><blockquote>
+<p>让 Agent「先想后做」，并让任务在跨会话之间不丢失锚点。本文对齐内部「参考实现」的<strong>计划引擎</strong>（规划-执行分离）与任务管理机制，并补齐 opencode 定制版的增强项。</p>
+</blockquote>
+<h2 id="_1">一、先想后做：规划与执行分离</h2>
+<p>复杂任务最贵的错误是「方向错了还在埋头做」。计划机制把工作分成两个阶段：</p>
+<pre><code class="language-text">planning（只读规划）  →  goal / approach / steps / verification
+executing（按计划执行）→  逐步推进 + 每步验证
+</code></pre>
+<p>规划阶段<strong>不修改任何文件</strong>，只产出计划并等待确认；确认后才进入执行。这与 <a href="subagents.html">子代理与编排</a> 的 Chain 模式天然契合：规划 → 实施 → 审查。</p>
+<h2 id="tui">二、斜杠命令与 TUI 流程</h2>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/plan &lt;目标&gt;</code></td>
+<td>进入计划模式（先分析再实施），禁止文件变更</td>
+</tr>
+<tr>
+<td><code>/plan_checkout [路径]</code></td>
+<td>加载已有计划文件并进入 plan 模式</td>
+</tr>
+<tr>
+<td><code>/run</code></td>
+<td>执行当前计划</td>
+</tr>
+<tr>
+<td><code>/compact_run &lt;计划&gt;</code></td>
+<td>先压缩上下文，再执行计划（上下文紧张时用）</td>
+</tr>
+<tr>
+<td><code>/cancel</code></td>
+<td>停止当前操作，报告进度与部分改动</td>
+</tr>
+<tr>
+<td><code>/tasks</code></td>
+<td>查看 / 管理后台任务</td>
+</tr>
+<tr>
+<td><code>/todo</code></td>
+<td>查看 / 创建 / 更新 todo</td>
+</tr>
+<tr>
+<td><code>/context</code></td>
+<td>查看上下文快照（含活跃任务）</td>
+</tr>
+</tbody>
+</table>
+<p><code>/plan</code> 模式的产物固定五段：问题分析、范围、步骤（有序）、风险与缓解、验证方式——最后等你说 <code>execute</code> / <code>go</code> 才动手。</p>
+<h2 id="_2">三、四层规划模型</h2>
+<p>计划引擎对齐并增强了「参考实现」的计划功能，把计划拆成<strong>四层、逐层独立写入</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>含义</th>
+<th>回答的问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>goal</code></td>
+<td>目标</td>
+<td>任务最终达成什么</td>
+</tr>
+<tr>
+<td><code>approach</code></td>
+<td>方案</td>
+<td>总体思路 / 技术选型</td>
+</tr>
+<tr>
+<td><code>steps</code></td>
+<td>步骤</td>
+<td>具体执行步骤（每步带验证策略）</td>
+</tr>
+<tr>
+<td><code>verification</code></td>
+<td>验证</td>
+<td>验收标准</td>
+</tr>
+</tbody>
+</table>
+<p>分层的好处：目标与方案分离，避免「把实现细节写成目标」；步骤与验证绑定，避免「做完了却不知道怎么算通过」。</p>
+<h2 id="dag">四、DAG 子计划与状态机</h2>
+<p>复杂任务拆成多个<strong>子计划</strong>，用 <code>depends_on</code> 声明依赖，构成有向无环图（DAG）：</p>
+<pre><code class="language-text">[子计划A] ─┐
+           ├─→ [子计划C] ─→ [子计划D]
+[子计划B] ─┘
+</code></pre>
+<ul>
+<li><strong>拓扑调度</strong>：执行前校验依赖存在 + 无循环（DFS 检测）；</li>
+<li><strong>状态机</strong>：<code>Draft → Ready → Executing → Completed → Failed</code>；</li>
+<li><strong>级联失败</strong>：某子计划 <code>Failed</code>，依赖它的、仍处于 <code>Ready</code> 的子计划一并标记 <code>Failed</code>。</li>
+</ul>
+<pre><code class="language-text">Draft ──run──▶ Ready ──▶ Executing ──▶ Completed
+  │              │            │
+  └──────────────┴────────────┴──▶ Failed ──▶（可回到 Draft / Ready）
+</code></pre>
+<h2 id="plan-cli">五、plan 工具与 CLI</h2>
+<p>计划存储：<code>.opencode/plans/plans.json</code>（索引）+ <code>&lt;id&gt;.md</code>（详情）。对话中让 AI 调用 <code>plan</code> 工具，或用 CLI（不经过 LLM）：</p>
+<pre><code class="language-bash">plan init &quot;重构认证模块&quot;                      # 创建计划
+plan write &lt;id&gt; goal &quot;&lt;目标&gt;&quot;                 # 四层逐层写入
+plan write &lt;id&gt; approach &quot;&lt;方案&gt;&quot;
+plan write &lt;id&gt; steps &quot;&lt;步骤&gt;&quot;
+plan write &lt;id&gt; verification &quot;&lt;验收标准&gt;&quot;
+plan sub &quot;后端实现&quot; --depends-on &lt;id&gt;         # 添加子计划 + 声明依赖
+plan status                                   # 查看计划树与状态
+plan run                                      # 校验（依赖存在 + 循环检测）并进入执行
+plan update &lt;id&gt; Executing / Completed / Failed   # 推进状态（失败级联）
+</code></pre>
+<h2 id="todo">六、Todo：可追踪的结构化待办</h2>
+<p><code>todo</code> 把「散落的诉求」固化为 markdown 文件，跨会话可查：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>约定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>存储</td>
+<td><code>.opencode/todos/&lt;MMDD-HHMM&gt;-&lt;slug&gt;.md</code></td>
+</tr>
+<tr>
+<td>frontmatter</td>
+<td><code>order</code>（自增）/ <code>title</code> / <code>type</code>，<code>activate</code> 后追加 <code>active: true</code></td>
+</tr>
+<tr>
+<td>正文三节</td>
+<td><code>## 背景</code> / <code>## 目标</code> / <code>## 已知信息</code>（goal 与 bug 同模板）</td>
+</tr>
+<tr>
+<td>类型</td>
+<td><code>goal</code>（目标 / 功能 / 探索）或 <code>bug</code>（缺陷 / 异常 / 回归）</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">todo add title=&quot;登录态刷新失败&quot; type=bug    # 创建
+todo list                                     # 按 order 升序列出
+todo activate slug=&lt;文件名或 slug&gt;           # 激活（其余自动取消激活）
+</code></pre>
+<p>两种类型对应两条工作路径：<code>goal</code> 来自需求澄清（<code>sk_goal</code>），<code>bug</code> 来自调试（<code>sk_debug</code>）。无法判定时优先归为 <code>goal</code>。信息不足不编造，用 <code>[TBD] — 待探索补充</code> 占位，留待探索阶段补全。</p>
+<h2 id="vs-todo">七、双「会话」玩法：会话内待办 vs 跨会话 todo</h2>
+<p>定制版有<strong>两套待办语义</strong>，别混用：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>内置 <code>todowrite</code>（会话内）</th>
+<th><code>todo</code> 工具（跨会话）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>范围</td>
+<td>当前会话的临时清单</td>
+<td>落盘 markdown，跨会话持久</td>
+</tr>
+<tr>
+<td>用途</td>
+<td>一次任务内的进度勾选</td>
+<td>把工作项登记为可追踪锚点</td>
+</tr>
+<tr>
+<td>触发</td>
+<td>Agent 内部使用</td>
+<td><code>todo</code> 工具 / <code>sk_todo</code> 技能 / <code>/todo</code></td>
+</tr>
+<tr>
+<td>激活</td>
+<td>无</td>
+<td><code>activate</code> 标记当前聚焦项</td>
+</tr>
+</tbody>
+</table>
+<p>一句话：<strong>会话内的拆步用 <code>todowrite</code>，要跨会话跟进的用 <code>todo</code></strong>。</p>
+<h2 id="task_manager">八、task_manager：带依赖的任务流</h2>
+<p><code>task_manager</code> 管理带依赖关系的任务（<code>.opencode/tasks/tasks.json</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>create &lt;标题&gt; [--type goal\|bug]</code></td>
+<td>创建任务，返回自增 ID（t1, t2…），初始 <code>pending</code></td>
+</tr>
+<tr>
+<td><code>update &lt;id&gt; --status &lt;状态&gt;</code></td>
+<td>状态流转：<code>pending → in_progress → completed</code>（可加 <code>blocked_by</code> / <code>blocks</code> 依赖）</td>
+</tr>
+<tr>
+<td><code>list</code> / <code>get &lt;id&gt;</code></td>
+<td>列出 / 查看详情</td>
+</tr>
+</tbody>
+</table>
+<p>两条硬约束：</p>
+<ol>
+<li><strong>同一时间只允许一个 <code>in_progress</code> 任务</strong>——强制聚焦，避免并行多任务失焦；</li>
+<li><strong>活跃任务自动注入上下文</strong>——<code>lifecycle-hooks</code> 把 <code>in_progress</code> 任务作为「工作锚点」注入每轮会话，让 Agent 始终感知在做什么（见 <a href="plugins.html">插件与扩展</a>）。</li>
+</ol>
+<h2 id="_3">九、落地清单</h2>
+<ol>
+<li><strong>复杂任务先 <code>/plan</code></strong>——不超过 3 步的任务不必规划，直接做；</li>
+<li><strong>四层写全</strong>——尤其别漏 <code>verification</code>，它是「做完」的唯一判据；</li>
+<li><strong>用子计划管理多条工作线</strong>——<code>depends_on</code> 表达真实依赖，别用执行顺序脑补；</li>
+<li><strong>跨会话工作项落 todo</strong>——用 <code>sk_todo</code> 补全三节，<code>activate</code> 当前聚焦项；</li>
+<li><strong>长任务挂 task_manager</strong>——<code>blocked_by</code> / <code>blocks</code> 表达依赖，活跃任务由 hooks 自动带回；</li>
+<li><strong>上下文紧张先 <code>/compact_run</code></strong>——先压缩再执行，避免中途超预算（见 <a href="token-economy.html">省 token 与上下文管理</a>）。</li>
+</ol>
+<blockquote>
+<p>相关工作流编排见 <a href="workflows.html">工作流</a>；委派执行见 <a href="subagents.html">子代理与编排</a>。</p>
+</blockquote></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../core/subagents.html"><span>← 上一篇</span><strong>子代理与编排</strong></a>
+      <a class="pager-link next" href="../core/workflows.html"><span>下一篇 →</span><strong>工作流</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、先想后做：规划与执行分离</a></li>
+<li><a href="#tui">二、斜杠命令与 TUI 流程</a></li>
+<li><a href="#_2">三、四层规划模型</a></li>
+<li><a href="#dag">四、DAG 子计划与状态机</a></li>
+<li><a href="#plan-cli">五、plan 工具与 CLI</a></li>
+<li><a href="#todo">六、Todo：可追踪的结构化待办</a></li>
+<li><a href="#vs-todo">七、双「会话」玩法：会话内待办 vs 跨会话 todo</a></li>
+<li><a href="#task_manager">八、task_manager：带依赖的任务流</a></li>
+<li><a href="#_3">九、落地清单</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

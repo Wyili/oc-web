@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>排障 FAQ · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li class="active"><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 应用实践 <span class="sep">/</span> <span class="current">排障 FAQ</span></nav>
+    <article class="markdown"><blockquote>
+<p>按「先看现象 → 再对原因 → 最后动手」组织，命令可直接复制。系统性调试方法论见<a href="diagnosis.html">快速定位问题</a>；密钥注入细节见 <code>.opencode/README.md</code>「密钥管理」。</p>
+</blockquote>
+<h2 id="_1">一、高频问题速查表</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>现象</th>
+<th>可能原因</th>
+<th>解决</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>opencode: command not found</code></td>
+<td>新终端未生效 / PATH 缺目录</td>
+<td><code>source ~/.bashrc</code> 或重开终端；确认 <code>~/.local/bin</code>、<code>~/.config/opencode/bin</code> 在 <code>PATH</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>模型报 <code>401</code> /「未提供认证凭据」</td>
+<td><code>secrets.env</code> 缺对应 key，或未 source</td>
+<td><code>grep '^OPENAI_API_KEY=' ~/.config/secrets.env</code>；<code>set -a; source ~/.config/secrets.env; set +a</code>；核对 provider <code>baseURL</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>provider not configured / 模型不可用</td>
+<td>provider 未配置或名称写错</td>
+<td>在 <code>opencode.json</code> 的 <code>provider</code> 字段配 npm 包 + <code>baseURL</code> + <code>apiKey: "{env:XXX}"</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>改配置 / 加技能后不生效</td>
+<td>运行中未重载</td>
+<td>会话内 <code>/reload</code>；命令/技能 symlink 新增即生效，但需刷新</td>
+</tr>
+<tr>
+<td>5</td>
+<td>工具调用被拒绝</td>
+<td><code>permission</code> 处于 <code>strict</code> / <code>balanced</code></td>
+<td>切 <code>trust</code>，或启动加 <code>--auto</code>；注意显式拒绝的操作 <code>--auto</code> 也不会放行</td>
+</tr>
+<tr>
+<td>6</td>
+<td>上下文过大 / 响应变慢</td>
+<td>历史与工具输出累积超预算</td>
+<td><code>/compact</code>、<code>/clear</code>，或调整 <code>compaction</code>；换任务用 <code>/new</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>自动压缩从不触发（私有模型）</td>
+<td>模型缺 <code>limit.context</code>，阈值算不出</td>
+<td><code>./init.sh</code> 会为私有模型注入 <code>200000/32768</code>；或用 <code>--force</code> 重建后再 <code>--reload</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>jira / gerrit / kb 插件不工作</td>
+<td>对应环境变量缺失</td>
+<td>配 <code>JIRA_TOKEN</code> / <code>GERRIT_SSH_HOST</code> / <code>CONFLUENCE_API_TOKEN</code>；<code>/plugins list</code> 查状态</td>
+</tr>
+<tr>
+<td>9</td>
+<td>gerrit 命令报认证/SSH 失败</td>
+<td>公钥未配到 Gerrit 服务端</td>
+<td>把 <code>~/.ssh/id_*.pub</code> 配到 Gerrit（Settings → SSH Keys）；确认 <code>GERRIT_SSH_HOST</code> 与 <code>~/.ssh/config</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>初始化报 <code>bun not found</code></td>
+<td>缺 bun 运行时</td>
+<td><code>init.sh</code> 会自动安装；失败则 <code>curl -fsSL https://bun.sh/install \| bash</code> 后重试</td>
+</tr>
+<tr>
+<td>11</td>
+<td>拉取代码后仍是旧版本</td>
+<td>二进制未重编译</td>
+<td><code>cd ~/opencode &amp;&amp; git pull &amp;&amp; opencode init --build</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>资产拉取失败</td>
+<td>资产仓库不可达 / 源配错</td>
+<td><code>asset list</code> 确认；检查 <code>.opencode/opencode.jsonc</code> 的 <code>assets.repo</code> 或 <code>OPENCODE_ASSETS_REPO</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>模型列表过旧 / 缺新模型</td>
+<td>本地缓存旧</td>
+<td><code>opencode models --refresh</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>MCP 服务器连不上</td>
+<td><code>command</code>/<code>args</code> 配错或进程起不来</td>
+<td><code>opencode mcp</code> 看状态；核对 <code>mcp.servers</code>；用 <code>@tool/mcp-inspector</code> 调试</td>
+</tr>
+<tr>
+<td>15</td>
+<td>脚本 / cron / systemd 拿不到密钥</td>
+<td>非交互 shell 提前 return</td>
+<td><code>secrets.env</code> 的 source 必须在 bashrc 交互守卫<strong>之前</strong>；systemd 用 <code>EnvironmentFile</code> 指向 <code>secrets.env</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>粘贴图片进 prompt 没反应</td>
+<td>Linux 缺剪贴板读图工具</td>
+<td>装 <code>wl-clipboard</code>（Wayland）或 <code>xclip</code>（X11）；或改为引用本地图片文件让 <code>read</code> 读取</td>
+</tr>
+<tr>
+<td>17</td>
+<td>后台任务完成没有桌面通知</td>
+<td>无图形会话或缺 <code>notify-send</code></td>
+<td>通知静默跳过不影响功能；确认 <code>MA_NO_DESKTOP_NOTIFY</code> 未设为 <code>1</code>，需要时装 <code>libnotify-bin</code></td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>worktree remove</code> 被拒绝</td>
+<td>树有未提交改动 / 分支未合并</td>
+<td>先 commit 或 stash，或对分支执行 <code>merge</code>；确需强制删除才用 <code>force=true</code></td>
+</tr>
+<tr>
+<td>19</td>
+<td>换场景后 AI 找不到已有知识</td>
+<td>场景未激活 / reference 为空</td>
+<td><code>workscene activate &lt;name&gt;</code> 切换场景；用 <code>workscene find &lt;关键词&gt;</code> 确认条目存在</td>
+</tr>
+<tr>
+<td>20</td>
+<td>同一操作反复失败仍不停手</td>
+<td>未先诊断就重试</td>
+<td>见<a href="diagnosis.html">快速定位问题</a>：连续失败 3 次先停下、上报阻塞，别重复烧无效轮次</td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>opencode upgrade</code> 后定制功能消失</td>
+<td>官方升级覆盖了定制版二进制</td>
+<td>定制版请用 <code>git pull &amp;&amp; opencode init --build</code> 重建，不要用 <code>upgrade</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>压缩后关键上下文丢失</td>
+<td>压缩只保留近期 token，过程信息被折叠</td>
+<td>压缩前把结论写入工作场景 <code>reference/</code> 或记忆，或用 <code>/compact_run &lt;计划&gt;</code> 带着计划继续</td>
+</tr>
+<tr>
+<td>23</td>
+<td>TUI 模型选择器缺少分组 / 常用模型难找</td>
+<td><code>tui.json</code> 未配置 <code>model_tabs</code></td>
+<td>在 <code>tui.json</code> 配 <code>model_tabs.tabs</code>（如 favorites / recent / local）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1">二、密钥与认证（1 号杀手）</h2>
+<p>密钥统一放 <code>~/.config/secrets.env</code>（<code>0600</code>，非 git），由 <code>~/.bashrc</code> 顶部 <code>set -a; source …; set +a</code> 注入。<strong>三条最常见坑</strong>：</p>
+<ol>
+<li><strong>写了 <code>export</code> 前缀</strong>。<code>secrets.env</code> 必须是<strong>纯 <code>KEY=value</code></strong>，一行一个、不加引号、不加 <code>export</code>。带 <code>export</code> 时 systemd <code>EnvironmentFile</code> 解析失败 → 服务拿不到变量 → 401。</li>
+<li><strong>source 位置在交互守卫之后</strong>。<code>~/.bashrc</code> 开头有 <code>case $- in *i*) *) return;; esac</code>，非交互 shell 会提前 return。<code>source secrets.env</code> 必须放在守卫之前（<code>init.sh</code> 已按此插入），否则脚本 / cron 拿不到。</li>
+<li><strong>没在新终端生效</strong>。改动后 <code>source ~/.bashrc</code>，或新开终端。</li>
+</ol>
+<p>自检：</p>
+<pre><code class="language-bash">set -a; source ~/.config/secrets.env; set +a &amp;&amp; env | grep -c '^OPENAI_API_KEY='   # 输出 1 即就绪
+opencode debug config        # 确认所用 provider 的 apiKey 非空（空 = 未配置或未 source）
+opencode run &quot;回复ok&quot;         # 实际调用验证；报 401 回查密钥
+</code></pre>
+<blockquote>
+<p>迁移换机后：密钥与私有 provider <strong>不进 git</strong>。新建 <code>secrets.env</code> 填入真实值，并从旧机拷贝 <code>~/.config/opencode/opencode.json</code>（含私有 provider），再 <code>source ~/.bashrc</code>。</p>
+</blockquote>
+<hr />
+<h2 id="_2">三、安装与环境</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>解决</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>init</code> 报 <code>git not found</code></td>
+<td>系统无 git</td>
+<td>安装 git 后重跑 <code>./init.sh</code></td>
+</tr>
+<tr>
+<td><code>python3 not found</code> 警告</td>
+<td>插件脚本与私有配置合并需要 python3</td>
+<td><code>sudo apt install python3</code>（缺 python3 时 <code>--force</code> 合并会退化）</td>
+</tr>
+<tr>
+<td>编译离线失败</td>
+<td>拉不到 models.dev 模型清单</td>
+<td>预置缓存 <code>~/.cache/opencode/models.json</code>，或联网编译</td>
+</tr>
+<tr>
+<td>换机后命令全丢</td>
+<td>PATH / wrapper 未部署</td>
+<td>跑 <code>./init.sh</code>（自动补 PATH 与 wrapper），再 <code>source ~/.bashrc</code></td>
+</tr>
+<tr>
+<td><code>--force</code> 后私有 provider 丢了</td>
+<td>期望被 <code>--force</code> 覆盖</td>
+<td>正常不会丢：<code>--force</code> 会自动保留并备份；<code>--reset</code> 才会清空（先备份到 <code>/tmp/opencode-config-backup/</code>）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>备份私有配置：<code>./init.sh --backup</code> → <code>~/opencode-config-backup-&lt;ts&gt;.tar.gz</code>；还原：<code>./init.sh --restore &lt;备份.tar.gz&gt;</code>。</p>
+</blockquote>
+<hr />
+<h2 id="_3">四、上下文与性能</h2>
+<ul>
+<li><strong>上下文过大</strong>：<code>&lt;leader&gt;c</code> 或 <code>/compact</code> 压缩；调整 <code>compaction</code>（<code>auto</code> / <code>tail_turns</code> / <code>preserve_recent_tokens</code> / <code>reserved</code>）。</li>
+<li><strong>单次工具输出吞预算</strong>：<code>tool_output.max_lines</code> / <code>max_bytes</code> 控制（模板默认 200 行 / 8KB，超限写文件 + 预览）。</li>
+<li><strong>大日志 / 长测试</strong>：交给后台任务，输出落盘 <code>.opencode/tasks/&lt;id&gt;.log</code>，不灌入对话。</li>
+<li><strong>反复失败重试</strong>：同一操作连续失败 3 次先停下诊断，别重复烧无效轮次。</li>
+</ul>
+<h2 id="_4">五、技能与命令不触发的排查顺序</h2>
+<ol>
+<li><strong>是否加载</strong>——<code>/reload</code> 刷新；命令/技能目录 symlink 新增即生效，但运行中需刷新。</li>
+<li><strong>是否在生效范围</strong>——项目级技能放 <code>&lt;项目&gt;/.opencode/skills/</code>（只在该项目生效）；全局放 <code>~/.config/opencode/</code> 或 <code>skills.paths</code>。</li>
+<li><strong>是否可被匹配</strong>——技能靠 <code>description</code> 自动匹配，把触发条件写进描述（「当 X 时使用…」），空泛描述不会被选中。</li>
+<li><strong>凭据是否就位</strong>——jira / gerrit / kb 类命令即使加载成功，也需对应环境变量才能跑通。</li>
+</ol>
+<hr />
+<h2 id="_5">六、常用自检命令（照抄）</h2>
+<table>
+<thead>
+<tr>
+<th>检查目标</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>命令是否就位</td>
+<td><code>command -v opencode &amp;&amp; ls -l ~/.local/bin/opencode</code></td>
+</tr>
+<tr>
+<td>配置是否合法</td>
+<td><code>python3 -m json.tool ~/.config/opencode/opencode.json &gt; /dev/null &amp;&amp; echo ok</code></td>
+</tr>
+<tr>
+<td>密钥是否加载</td>
+<td><code>grep -oE '^[A-Z_]+=' ~/.config/secrets.env \| tr -d '='</code></td>
+</tr>
+<tr>
+<td>provider / apiKey 解析</td>
+<td><code>opencode debug config</code>（确认 apiKey 非空）</td>
+</tr>
+<tr>
+<td>实际调用是否通</td>
+<td><code>opencode run "回复ok" --model &lt;provider&gt;/&lt;model&gt;</code></td>
+</tr>
+<tr>
+<td>详细日志</td>
+<td><code>opencode --print-logs --log-level DEBUG</code></td>
+</tr>
+<tr>
+<td>模型缓存是否过旧</td>
+<td><code>opencode models --refresh</code></td>
+</tr>
+<tr>
+<td>会话与成本趋势</td>
+<td><code>opencode session</code> / <code>opencode stats --days 7</code></td>
+</tr>
+<tr>
+<td>资产源是否可达</td>
+<td><code>asset list</code></td>
+</tr>
+<tr>
+<td>源码/二进制是否同步</td>
+<td><code>opencode init --build</code>（拉代码后必做）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">七、常见误区与正解</h2>
+<table>
+<thead>
+<tr>
+<th>误区</th>
+<th>后果</th>
+<th>正解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>在 <code>secrets.env</code> 里写 <code>export KEY=value</code></td>
+<td>systemd 解析失败、服务 401</td>
+<td>只用纯 <code>KEY=value</code>，由 bashrc 的 <code>set -a</code> 自动导出</td>
+</tr>
+<tr>
+<td>把密钥直接写进 <code>~/.bashrc</code></td>
+<td>bashrc 是 644 明文、systemd 不加载</td>
+<td>统一放 <code>secrets.env</code>（0600），bashrc 只 source</td>
+</tr>
+<tr>
+<td>以为 <code>--force</code> 会丢私有 provider</td>
+<td>不敢用 <code>--force</code> 重建配置</td>
+<td><code>--force</code> 自动保留并备份；只有 <code>--reset</code> 才清空（先备份到 <code>/tmp</code>）</td>
+</tr>
+<tr>
+<td>整段 <code>cat</code> 大文件 / 大日志</td>
+<td>单次吞掉巨额预算</td>
+<td>先 <code>grep</code> 定位行号，再按 offset/limit 读片段</td>
+</tr>
+<tr>
+<td>拉完代码不重编译</td>
+<td>跑的还是旧二进制</td>
+<td><code>git pull &amp;&amp; opencode init --build</code></td>
+</tr>
+<tr>
+<td>排查时直接 <code>--reset</code></td>
+<td>清空全部私有配置</td>
+<td>先 <code>--backup</code>，或只改必要项；<code>--reset</code> 会先备份到 <code>/tmp</code></td>
+</tr>
+<tr>
+<td>同一操作反复重试</td>
+<td>重复输出入上下文、烧 token</td>
+<td>失败先诊断（见<a href="diagnosis.html">快速定位问题</a>），3 次即停并上报</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="30">八、最短排查路径（30 秒走一遍）</h2>
+<p>遇到「不工作」先按顺序过一遍，多数问题在前两步解决：</p>
+<ol>
+<li><strong>刷新</strong>——<code>/reload</code>（配置 / 技能是否生效）；</li>
+<li><strong>看配置</strong>——<code>opencode debug config</code>（provider 是否在、<code>apiKey</code> 是否为空）；</li>
+<li><strong>认证失败</strong>——查 <code>secrets.env</code> 是否有对应 key，<code>set -a; source …; set +a</code> 后重试；</li>
+<li><strong>上下文过大</strong>——<code>/compact</code> 或 <code>/new</code>；</li>
+<li><strong>权限被拒</strong>——切 <code>permission</code> 模式或启动加 <code>--auto</code>；</li>
+<li><strong>仍不明</strong>——<code>opencode --print-logs --log-level DEBUG</code> 拿到日志，再按<a href="diagnosis.html">快速定位问题</a>分类事实与假设。</li>
+</ol>
+<blockquote>
+<p>记忆点：<strong>先刷配置（<code>/reload</code>）→ 再验凭据（<code>debug config</code>）→ 后看上下文与权限 → 最后上日志</strong>。顺序对了，绝大多数「玄学问题」都能在几步内定位。</p>
+</blockquote></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../practice/tips.html"><span>← 上一篇</span><strong>技巧分享</strong></a>
+      <a class="pager-link next" href="../appendix/commands.html"><span>下一篇 →</span><strong>命令速查</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、高频问题速查表</a></li>
+<li><a href="#1">二、密钥与认证（1 号杀手）</a></li>
+<li><a href="#_2">三、安装与环境</a></li>
+<li><a href="#_3">四、上下文与性能</a></li>
+<li><a href="#_4">五、技能与命令不触发的排查顺序</a></li>
+<li><a href="#_5">六、常用自检命令（照抄）</a></li>
+<li><a href="#_6">七、常见误区与正解</a></li>
+<li><a href="#30">八、最短排查路径（30 秒走一遍）</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

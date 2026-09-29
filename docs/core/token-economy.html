@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>省 token 与上下文管理 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li class="active"><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 核心能力 <span class="sep">/</span> <span class="current">省 token 与上下文管理</span></nav>
+    <article class="markdown"><blockquote>
+<p>省 token 不只是省钱：它同时换来<strong>更大的有效上下文</strong>（同样预算装更多信息）与<strong>更快的响应</strong>（每轮输入更短）。本文先分析「参考实现」的省 token 设计，再给出 opencode 定制版的对应机制与落地清单。</p>
+</blockquote>
+<h2 id="_1">一、先看清成本模型</h2>
+<p>每一轮请求发送给模型的内容大致是：</p>
+<pre><code class="language-text">系统提示（AGENTS.md / 技能列表 / 工具描述 / 环境信息）
+  + 对话历史（逐轮累积）
+  + 工具输出（读文件、命令返回等）
+  + 本轮生成（含思考）
+</code></pre>
+<p>要点：</p>
+<ul>
+<li><strong>历史与工具输出会随对话累积</strong>——不清理就是持续付费；</li>
+<li><strong>系统提示是每轮固定成本</strong>——文件越臃肿，每轮都贵；</li>
+<li><strong>工具输出最容易失控</strong>——一次 <code>cat</code> 大文件顶上几百轮对话。</li>
+</ul>
+<p>所以省 token 的三条主线：<strong>控输入（每轮携带什么）、控输出（生成与工具结果多大）、控频率（不做无效轮次）</strong>。</p>
+<h2 id="token">二、参考实现的省 token 设计（对照分析）</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>机制</th>
+<th>原理</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>模型分档</strong></td>
+<td>轻活（探索、摘要）用 flash 档，重活用 pro 档，视觉单独回退</td>
+<td>单价差可达数倍；轻量任务近乎免费额度</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>子代理独立上下文</strong></td>
+<td>探索/执行在独立会话窗口完成，只把<strong>结论</strong>回传主会话</td>
+<td>过程性 token 不进入主上下文，主会话保持精简</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>explorer 快扫</strong></td>
+<td>只读工具 + 「了解结构不深挖细节」的提示词纪律</td>
+<td>探索阶段用最小代价拿到地图</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>后台任务输出落盘</strong></td>
+<td>长命令输出写文件，完成后只发通知</td>
+<td>大输出不占对话上下文</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>工具输出截断/落盘</strong></td>
+<td>超限结果存文件 + 头尾预览</td>
+<td>单条工具结果有硬上限</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>上下文压缩</strong></td>
+<td>预算触发自动压缩；<code>/compact</code> 手动清理；保留近期原文</td>
+<td>长会话可持续</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>技能按需加载</strong></td>
+<td>系统提示只放「名称 + 描述」，正文用时才注入</td>
+<td>技能再多，固定成本不变</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>上下文文件精炼</strong></td>
+<td>AGENTS.md「只写 Agent 需要知道的知识和约束」</td>
+<td>压低每轮固定成本</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>持久锚点</strong></td>
+<td>计划 / Todo / 场景 reference 落盘，跨会话引用</td>
+<td>避免重复探索与复述</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>可度量</strong></td>
+<td>用量统计、评估里的 cost / latency 门禁</td>
+<td>优化有基线，防止回退</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>观察：这些机制里，<strong>对成本影响最大的是「分档模型」与「子代理隔离」</strong>——即把工作放到正确的模型和正确的上下文窗口里，而不是在提示词上抠字眼。</p>
+</blockquote>
+<h2 id="opencode">三、opencode 定制版的对应机制</h2>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>opencode 实现</th>
+<th>开关/落点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>小模型</td>
+<td><code>small_model</code> 配置；标题生成等轻任务自动使用</td>
+<td><code>opencode.json</code> → <code>small_model</code></td>
+</tr>
+<tr>
+<td><strong>子代理默认小模型</strong></td>
+<td>agent frontmatter 写 <code>model: small</code> → 解析为 <code>small_model</code>（解析不到回退父模型）</td>
+<td><code>.opencode/agent/explorer.md</code> 已默认挂载</td>
+</tr>
+<tr>
+<td>子代理隔离上下文</td>
+<td>子代理在独立子会话运行，仅把最终文本回传主会话</td>
+<td>内置 <code>task</code> 工具（自动）</td>
+</tr>
+<tr>
+<td>子代理并发上限</td>
+<td><code>subagent_max_concurrency</code>（默认 4，范围 1-8）防止并发风暴</td>
+<td><code>opencode.json</code></td>
+</tr>
+<tr>
+<td>工具输出限制</td>
+<td><code>tool_output.max_lines / max_bytes</code>，超限写文件 + 预览</td>
+<td><code>opencode.json</code>（模板默认 200 行 / 8KB）</td>
+</tr>
+<tr>
+<td>自动压缩</td>
+<td>以模型 <code>limit.context</code> 为预算触发；缺 limit 的私有模型由 <code>init.sh</code> 注入 200k/32k 预算</td>
+<td><code>init.sh</code>（自动注入）+ <code>compaction</code></td>
+</tr>
+<tr>
+<td>压缩策略</td>
+<td><code>auto / tail_turns / preserve_recent_tokens / reserved / prune</code></td>
+<td><code>opencode.json</code> → <code>compaction</code></td>
+</tr>
+<tr>
+<td>后台任务</td>
+<td><code>background-task</code> 工具：输出落盘 <code>.opencode/tasks/*.log</code>，完成记录退出码并通知</td>
+<td>对话中让 Agent 后台执行即可</td>
+</tr>
+<tr>
+<td>技能轻列表</td>
+<td>系统提示只列技能名与描述，正文经 <code>skill</code> 工具按需加载</td>
+<td>保持技能 <code>description</code> 简短</td>
+</tr>
+<tr>
+<td>用量统计</td>
+<td><code>opencode stats</code>、会话上下文指标（token/上限占比）</td>
+<td>CLI / TUI</td>
+</tr>
+<tr>
+<td>提示词缓存</td>
+<td>Context Epoch 机制保持系统提示基线逐字稳定，命中 provider 缓存（缓存读约 0.1x 价）</td>
+<td>内置；避免会话中途频繁改 AGENTS.md</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">四、落地清单</h2>
+<h3 id="41">4.1 配置（照抄即可）</h3>
+<pre><code class="language-jsonc">// ~/.config/opencode/opencode.json
+{
+  &quot;small_model&quot;: &quot;&lt;轻量模型，如你的 flash 档&gt;&quot;,
+  &quot;compaction&quot;: {
+    &quot;auto&quot;: true,
+    &quot;tail_turns&quot;: 4,
+    &quot;preserve_recent_tokens&quot;: 8192,
+    &quot;reserved&quot;: 16384
+  },
+  &quot;tool_output&quot;: { &quot;max_lines&quot;: 200, &quot;max_bytes&quot;: 8192 }
+}
+</code></pre>
+<blockquote>
+<p>私有模型缺 <code>limit</code> 时不会触发自动压缩。<code>./init.sh</code> 会为私有模型自动注入 <code>context=200000 / output=32768</code> 的有效预算；官方模型由目录自动解析，无需配置。</p>
+</blockquote>
+<h3 id="42">4.2 使用习惯</h3>
+<ol>
+<li><strong>先探索，后动手</strong>——让 explorer 子代理先给「地图」，再决定改哪里；</li>
+<li><strong>精准检索</strong>——grep 定位行号后按 offset/limit 读片段，禁止整文件倾倒；</li>
+<li><strong>委派重活给子代理</strong>——多文件调研、批量验证都会污染主上下文；</li>
+<li><strong>长命令进后台</strong>——构建/全量测试用后台任务，输出落盘；</li>
+<li><strong>长会话及时压缩</strong>——<code>/compact</code>，或依赖自动压缩；换任务尽量 <code>/new</code>；</li>
+<li><strong>上下文文件保持精炼</strong>——AGENTS.md 只写「无法从代码推断」的约定与命令；</li>
+<li><strong>模型分对档</strong>——探索/摘要用 <code>small_model</code> 档，重活再上主力模型。</li>
+</ol>
+<h3 id="43">4.3 度量</h3>
+<ul>
+<li>会话后 <code>opencode stats</code> 看 token/成本趋势；</li>
+<li>评估场景加 <code>cost_under</code> / <code>latency_under</code> / <code>turns_under</code> 门禁（<code>eval-runner</code> 已支持），防止「答对但烧钱」；</li>
+<li>改动提示词/配置前后跑同一评估场景对比分数与成本。</li>
+</ul>
+<h2 id="_3">五、常见误区</h2>
+<table>
+<thead>
+<tr>
+<th>误区</th>
+<th>后果</th>
+<th>正解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>整段读大文件/大日志</td>
+<td>单次吞掉巨额预算</td>
+<td>先 grep 定位，再局部读</td>
+</tr>
+<tr>
+<td>同一命令反复重试</td>
+<td>重复输出入上下文</td>
+<td>失败先诊断（见<a href="../practice/diagnosis.html">快速定位问题</a>），3 次即停并上报</td>
+</tr>
+<tr>
+<td>长会话不压缩</td>
+<td>每轮都在重发旧历史</td>
+<td><code>/compact</code> 或自动压缩；任务切换开新会话</td>
+</tr>
+<tr>
+<td>让主会话干探索的活</td>
+<td>过程 token 全部留在主上下文</td>
+<td>委派 explorer；只回收结论</td>
+</tr>
+<tr>
+<td>AGENTS.md 变「项目百科」</td>
+<td>每轮固定成本水涨船高</td>
+<td>只写必要知识与约束，细节放文档</td>
+</tr>
+<tr>
+<td>所有任务都用旗舰模型</td>
+<td>单价 × 调用量双高</td>
+<td>轻活走小模型/快档，重活再上强模型</td>
+</tr>
+</tbody>
+</table></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../core/models.html"><span>← 上一篇</span><strong>模型配置</strong></a>
+      <a class="pager-link next" href="../core/background.html"><span>下一篇 →</span><strong>后台任务与通知</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、先看清成本模型</a></li>
+<li><a href="#token">二、参考实现的省 token 设计（对照分析）</a></li>
+<li><a href="#opencode">三、opencode 定制版的对应机制</a></li>
+<li><a href="#_2">四、落地清单</a><ul>
+<li><a href="#41">4.1 配置（照抄即可）</a></li>
+<li><a href="#42">4.2 使用习惯</a></li>
+<li><a href="#43">4.3 度量</a></li>
+</ul>
+</li>
+<li><a href="#_3">五、常见误区</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

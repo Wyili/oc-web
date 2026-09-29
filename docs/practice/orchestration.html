@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>编排思考逻辑（工作法） · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li class="active"><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 应用实践 <span class="sep">/</span> <span class="current">编排思考逻辑（工作法）</span></nav>
+    <article class="markdown"><blockquote>
+<p>本文沉淀一套可复用的协作工作法：把模糊的大任务变成「对齐 → 取证 → 拆解 → 派发 → 验证收敛」的可靠流程。它来自多代理实际编排实践（并行子代理 + 独立验证 + 分批交付），可直接迁移到任何复杂任务。</p>
+</blockquote>
+<h2 id="_1">一、总原则</h2>
+<ol>
+<li><strong>先对齐再动手</strong>——意图明确度分档：High 直接做；Medium 复述确认；Low 必须用<strong>结构化选项</strong>提问（一屏问完、标注推荐项）。</li>
+<li><strong>证据优先</strong>——结论分级 [Confirmed] / [Inferred] / [Uncertain]；先读代码、查文档、跑命令，多源交叉后再下判断。</li>
+<li><strong>能并行不串行、能委派不亲干</strong>——独立子任务并行派发；探索/实现的过程性开销放进子代理的独立上下文。</li>
+<li><strong>先骨架后批量</strong>——先用最小骨架验证通道（构建脚本、接口、流程），再批量生产内容。</li>
+<li><strong>产出必须独立验证</strong>——子代理报告「完成」不等于完成；编排者要亲手复跑关键验证。</li>
+</ol>
+<h2 id="_2">二、五步循环</h2>
+<h3 id="1-clarify">1. 对齐（Clarify）</h3>
+<ul>
+<li>先复述理解，再用选项化提问补齐缺口；把「推荐做法」写进选项说明，降低用户决策成本。</li>
+<li>典型四问：<strong>范围 / 交付物 / 边界（哪些不做）/ 交付方式</strong>。</li>
+<li>例：本仓库实践中，动手前先问「补齐范围（文档/配置层/含源码）、省 token 交付、文档范围、开发方式」四问。</li>
+</ul>
+<h3 id="2-recon">2. 取证（Recon）</h3>
+<ul>
+<li>先读再断：读代码、拉取外部文档、核对 git 历史与既有资料。</li>
+<li>把「用户说的」也当作<strong>可验证假设</strong>：先核对再行动（例如用户描述的功能可能与实现不符，早发现早修正）。</li>
+<li>例：完整抓取知识库全量页面（38 页）后，先与仓库既有归档对照，找出「文档声称有、代码没有」的差距。</li>
+</ul>
+<h3 id="3-decompose">3. 拆解（Decompose）</h3>
+<ul>
+<li>粒度：3+ 步或独立交付物才拆；每个任务<strong>一个明确交付物 + 可执行验收</strong>。</li>
+<li>先列任务表，再判断依赖：独立 → 并行；有依赖 → 串行/链式。</li>
+<li><strong>任务说明书五要素</strong>：目标 / 范围（<strong>文件白名单</strong>，避免并行冲突）/ 约束 / 验证要求 / 输出格式。</li>
+</ul>
+<h3 id="4-dispatch">4. 派发（Dispatch）</h3>
+<ul>
+<li><strong>并行优先</strong>：互不重叠的文件域一次派发多个 executor；串行只用于真依赖。</li>
+<li><strong>共享背景一次给全</strong>：仓库背景、命名约定、禁止事项统一放在共享语境里，不要让每个子任务重复描述。</li>
+<li><strong>给证据路径</strong>：关键接缝给到「文件:行号」级别（如 <code>task.ts:181</code>），减少子代理盲目搜索。</li>
+<li><strong>骨架先行</strong>：先搭最小可用骨架（如文档站的构建脚本 + 3 个范例页），验证通道后再批量生产。</li>
+</ul>
+<h3 id="5-verify-integrate">5. 验证收敛（Verify &amp; Integrate）</h3>
+<ul>
+<li><strong>独立验证</strong>：typecheck / 单测 / 冒烟测试在编排者这一层重跑，不轻信子代理的自述。</li>
+<li><strong>要求子代理报告「拿不准的点」</strong>：本实践中 4 个子代理各自列出「与源文档不符」清单（数量漂移、机制不存在等），直接转化为后续修复项——这是高价值的副产品。</li>
+<li><strong>差异处理</strong>：逐条决定「修实现」还是「修文档」，并记录在案。</li>
+<li><strong>分批提交</strong>：按特性拆分 commit，每个 commit 自洽可回滚；消息写清「做了什么/为什么/怎么验证」。</li>
+</ul>
+<h2 id="_3">三、失败与卡壳：不深入错误路径</h2>
+<blockquote>
+<p>在可疑但不正确的路径上「再挖深一点」是最贵的操作——烧时间、烧预算，还制造「快要找到了」的错觉。</p>
+</blockquote>
+<ul>
+<li><strong>失败即停</strong>：同一操作连续失败 3 次，停止重试并上报阻塞（Fail forward）。</li>
+<li><strong>卡壳协议</strong>（与<a href="diagnosis.html">快速定位问题</a>同源）：连续 2+ 轮无新证据、信心停滞、假设无法证实 → <strong>停止</strong>，汇总「已排除清单 + 具体 UNKNOWN」，交给最廉价的信源（人）判断。</li>
+<li><strong>先穷举、后深入</strong>：用低成本实验（读日志、二分、最小复现）排除整类可能，而不是押注一条路径。</li>
+</ul>
+<h2 id="token">四、省 token 的编排</h2>
+<p>与<a href="../core/token-economy.html">省 token 与上下文管理</a>呼应，编排层面同样有杠杆：</p>
+<table>
+<thead>
+<tr>
+<th>做法</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>独立调用批量并发（一条消息多个工具调用）</td>
+<td>减少往返轮次</td>
+</tr>
+<tr>
+<td>探索/实现委派给子代理</td>
+<td>过程 token 不进入主上下文</td>
+</tr>
+<tr>
+<td>大输出落盘、按需读取</td>
+<td>控制单条结果体积</td>
+</tr>
+<tr>
+<td>grep 定位 + 偏移读</td>
+<td>避免整文件倾倒</td>
+</tr>
+<tr>
+<td>共享背景一次给全</td>
+<td>避免每任务重复描述</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">五、一页检查清单</h2>
+<p><strong>动手前</strong>
+- [ ] 目标 / 范围 / 验收 / 约束清楚吗？Low 信心项问了吗？
+- [ ] 关键事实核对了吗（代码、文档、历史）？</p>
+<p><strong>派发前</strong>
+- [ ] 文件域不重叠吗？验收标准可执行吗？
+- [ ] 共享背景、证据路径给全了吗？禁止事项写了吗？</p>
+<p><strong>集成前</strong>
+- [ ] 关键验证独立跑过了吗？
+- [ ] 子代理「拿不准的点」处理了吗？
+- [ ] 提交粒度与消息符合仓库惯例吗？</p></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../practice/diagnosis.html"><span>← 上一篇</span><strong>快速定位问题</strong></a>
+      <a class="pager-link next" href="../practice/thinking-ui.html"><span>下一篇 →</span><strong>实时思考与 UI 设计</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、总原则</a></li>
+<li><a href="#_2">二、五步循环</a><ul>
+<li><a href="#1-clarify">1. 对齐（Clarify）</a></li>
+<li><a href="#2-recon">2. 取证（Recon）</a></li>
+<li><a href="#3-decompose">3. 拆解（Decompose）</a></li>
+<li><a href="#4-dispatch">4. 派发（Dispatch）</a></li>
+<li><a href="#5-verify-integrate">5. 验证收敛（Verify &amp; Integrate）</a></li>
+</ul>
+</li>
+<li><a href="#_3">三、失败与卡壳：不深入错误路径</a></li>
+<li><a href="#token">四、省 token 的编排</a></li>
+<li><a href="#_4">五、一页检查清单</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

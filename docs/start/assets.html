@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>资产与常用命令 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li class="active"><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 快速上手 <span class="sep">/</span> <span class="current">资产与常用命令</span></nav>
+    <article class="markdown"><blockquote>
+<p>定制版把可复用能力（子代理、工具、技能、插件、启动器）打包成<strong>资产</strong>，像包管理器一样 <code>list / pull / run / setup / export</code>。资产不进主仓库——它们统一放在独立资产仓库，按需拉取。本文给出两类入口、操作速查与本地开发（mirror）。</p>
+</blockquote>
+<h2 id="_1">一、五类资产</h2>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>引用格式</th>
+<th>典型内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>子代理</td>
+<td><code>@agent/xxx</code></td>
+<td><code>AGENTS.md</code> + <code>skills/</code> + <code>workflows/</code></td>
+</tr>
+<tr>
+<td>工具</td>
+<td><code>@tool/xxx</code></td>
+<td>独立可执行程序（<code>entry</code>，可 <code>run</code>）</td>
+</tr>
+<tr>
+<td>技能</td>
+<td><code>@skill/xxx</code></td>
+<td><code>SKILL.md</code>（加载步骤指令）</td>
+</tr>
+<tr>
+<td>启动器</td>
+<td><code>@launcher/xxx</code></td>
+<td><code>launch.py</code>（可执行）</td>
+</tr>
+<tr>
+<td>插件</td>
+<td><code>@plugin/xxx</code></td>
+<td><code>skillsDir</code> + <code>commandsDir</code> + <code>subAgentsDir</code></td>
+</tr>
+</tbody>
+</table>
+<p>每个资产 = <code>meta.json</code>（<code>name</code> / <code>type</code> / <code>version</code> / <code>description</code> / <code>requires</code> / <code>compatibility</code>）+ 内容文件 + <strong>自述文档</strong>（skill 写 <code>SKILL.md</code>、tool/plugin 写 <code>README.md</code>、agent 写 <code>AGENTS.md</code>），随资产一起分发。查详情用 <code>asset info @type/name</code>。</p>
+<h2 id="_2">二、两条入口</h2>
+<p><code>asset_manager</code> <strong>不是 shell 命令</strong>，有两类入口：</p>
+<ul>
+<li><strong>TUI 插件命令（推荐，不经 LLM）</strong>：输入 <code>/</code> 选择 <code>/asset_manager</code> 回车 → 交互式列表（<code>✅</code> 已拉取 / <code>⬜</code> 未拉取），选中 <code>⬜</code> 直接下载。</li>
+<li><strong>AI 工具 / CLI（经 LLM 或 <code>bun</code>）</strong>：对话中让 AI 调用 <code>asset_manager</code> 工具；命令行用 <code>asset</code>（<code>init.sh</code> 生成的 wrapper，直接 <code>exec bun</code> 到工具，不经过 LLM）。</li>
+</ul>
+<h2 id="_3">三、操作速查</h2>
+<p><code>asset &lt;操作&gt; @type/name</code>（对话中即 <code>asset_manager</code> 工具的同名操作）：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>作用</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>list</code></td>
+<td>列出可用资产，可按类型过滤、只看本地</td>
+<td><code>asset list @skill --local</code></td>
+</tr>
+<tr>
+<td><code>search</code></td>
+<td>按名称/描述/标签模糊匹配（本地 + 远程）</td>
+<td><code>asset search docx</code></td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td>查看资产详情（元信息 + 文件列表）</td>
+<td><code>asset info @tool/oc-lark</code></td>
+</tr>
+<tr>
+<td><code>pull</code></td>
+<td>拉取到全局缓存 <code>~/.config/opencode/assets/</code></td>
+<td><code>asset pull @skill/docx</code></td>
+</tr>
+<tr>
+<td><code>install</code></td>
+<td>拷贝到当前项目 <code>.opencode/assets/</code>（项目级，可改后 push）</td>
+<td><code>asset install @tool/xxx</code></td>
+</tr>
+<tr>
+<td><code>run</code></td>
+<td>运行 tool / launcher（执行 entry / <code>launch.py</code>）</td>
+<td><code>asset run @launcher/oc-default</code></td>
+</tr>
+<tr>
+<td><code>setup</code></td>
+<td>部署 skill/plugin 到项目 <code>.opencode/skills|plugins/</code>（目录扫描即生效）</td>
+<td><code>asset setup @skill/docx</code></td>
+</tr>
+<tr>
+<td><code>export</code></td>
+<td>导出资产到指定目录</td>
+<td><code>asset export @skill/docx --output /tmp/dist</code></td>
+</tr>
+<tr>
+<td><code>push</code></td>
+<td>发布到远程仓库（meta 校验 + 隐私扫描 + 身份检查 + 提交推送）</td>
+<td><code>asset push @skill/demo</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>查看本地资产 vs 发布工作区差异</td>
+<td><code>asset status</code></td>
+</tr>
+</tbody>
+</table>
+<p>补充：</p>
+<ul>
+<li><code>pull @launcher/xxx</code> 会读 <code>meta.json</code> 的 <code>requires</code> 字段，<strong>自动拉取依赖组件</strong>（如 launcher 依赖的 tool）；</li>
+<li><code>setup</code> 只支持 <code>skill</code> 与 <code>plugin</code>：skill → <code>.opencode/skills/</code>，plugin → <code>.opencode/plugins/</code>，部署后目录扫描即生效；</li>
+<li><code>asset new @type/name</code> 创建模板（走 <code>new-asset</code> 工具，5 类都支持）；<code>asset identity "&lt;昵称&gt;" "&lt;noreply 邮箱&gt;"</code> 注册发布身份。</li>
+</ul>
+<h2 id="_4">四、资产来源与查找优先级</h2>
+<p><code>asset-manager</code> 解析资产时按下列顺序查找，<strong>先命中先用</strong>：</p>
+<ol>
+<li><code>--mirror</code> 指定的<strong>本地镜像目录</strong>（开发测试用，跳过 git 拉取）；</li>
+<li><strong>全局缓存</strong> <code>~/.config/opencode/assets/&lt;类型&gt;/&lt;名称&gt;/</code>（<code>pull</code> 落盘处）；</li>
+<li><strong>远程资产仓库</strong>（<code>assets.repo</code> 配置的仓库）。</li>
+</ol>
+<p>项目级 <code>&lt;项目&gt;/.opencode/assets/&lt;类型&gt;/&lt;名称&gt;/</code> 是 <code>install</code> / <code>new-asset</code> 的<strong>落盘位置</strong>，用于项目内定制与发布；文档约定的覆盖优先级为 <strong>项目级 &gt; 全局 &gt; 远程</strong>。</p>
+<p><strong>资产仓库地址解析优先级</strong>：项目 <code>.opencode/opencode.jsonc</code> 的 <code>assets.repo</code> → 环境变量 <code>OPENCODE_ASSETS_REPO</code>（兜底）。换源只需改一处：</p>
+<pre><code class="language-jsonc">// .opencode/opencode.jsonc
+{
+  &quot;assets&quot;: { &quot;repo&quot;: &quot;https://github.com/&lt;owner&gt;/&lt;assets-repo&gt;&quot; }
+}
+</code></pre>
+<h2 id="mirror">五、mirror：本地开发</h2>
+<p>开发/测试资产时，用 <code>--mirror &lt;目录&gt;</code> 指定本地目录作为资产源，<strong>跳过 git 拉取</strong>。目录结构须与远程仓库一致：</p>
+<pre><code class="language-text">&lt;mirror&gt;/
+├── agents/&lt;name&gt;/
+├── tools/&lt;name&gt;/
+├── skills/&lt;name&gt;/
+├── launchers/&lt;name&gt;/
+└── plugins/&lt;name&gt;/
+</code></pre>
+<pre><code class="language-bash">asset list @skill --mirror /path/to/mirror        # 从镜像列出
+asset pull @skill/xxx --mirror /path/to/mirror    # 从镜像拉取（显示来源）
+asset info @tool/xxx --mirror /path/to/mirror     # 查看详情
+asset run  @tool/xxx --mirror /path/to/mirror     # 直接运行
+</code></pre>
+<p>设置 mirror 后，<code>list</code> / <code>pull</code> / <code>info</code> / <code>export</code> / <code>run</code> / <code>setup</code> 都优先从镜像读取——离线也能开发调试。</p>
+<h2 id="_5">六、本地修改与删除</h2>
+<p>拉到本地后资产就是普通文件，可直接编辑。三层位置：</p>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;项目&gt;/.opencode/assets/&lt;类型&gt;/&lt;名称&gt;/</code></td>
+<td>项目级覆盖（<code>install</code> 落盘）</td>
+</tr>
+<tr>
+<td><code>~/.config/opencode/assets/&lt;类型&gt;/&lt;名称&gt;/</code></td>
+<td>全局缓存（<code>pull</code> 落盘）</td>
+</tr>
+<tr>
+<td>远程仓库（<code>assets.repo</code>）</td>
+<td>只读源</td>
+</tr>
+</tbody>
+</table>
+<p>删除分三层，通常只需做前两步：</p>
+<pre><code class="language-bash"># ① 移除项目内部署（skill → .opencode/skills/，plugin → .opencode/plugins/）
+rm -rf .opencode/skills/docx
+rm -rf .opencode/plugins/jira
+
+# ② 清除全局缓存（本地 list --local 即不再显示）
+rm -rf ~/.config/opencode/assets/skills/docx
+
+# ③ 从远程彻底删除：在资产仓库删除对应目录并推送（仅维护者）
+</code></pre>
+<ul>
+<li>只做 ①：功能立即卸载，缓存保留可再部署；</li>
+<li>①② 都做：需重新 <code>pull</code> 才能再用；</li>
+<li>③ 影响所有使用者。</li>
+</ul>
+<h2 id="_6">七、创建与发布</h2>
+<pre><code class="language-bash">asset new @skill/demo                      # 创建模板（.opencode/assets/skills/demo/）
+# 编辑完善 SKILL.md / meta.json 后：
+asset push @skill/demo                     # 发布到远程资产仓库
+asset export @skill/demo --output /tmp/dist   # 或仅导出为目录
+</code></pre>
+<blockquote>
+<p><code>asset push</code> / <code>asset status</code> 委托 <code>.opencode/scripts/publish-assets.sh</code>（<code>init.sh</code> 同步为 <code>bin/publish-assets</code>）：负责 meta schema 校验 + 隐私扫描 + git 身份检查 + 提交推送；未配置发布身份或含敏感信息时会明确报错。资产内容<strong>不得</strong>包含业务名、公司名、内网域名、真实密钥或人名。</p>
+</blockquote>
+<h2 id="tool-plugin">八、@tool 还是 @plugin</h2>
+<p>决定新资产放哪类目录：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>@tool</code></th>
+<th><code>@plugin</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本质</td>
+<td>独立可执行程序（<code>entry</code> + 可 <code>run</code>）</td>
+<td>会话内扩展（skillsDir + commandsDir + subAgentsDir）</td>
+</tr>
+<tr>
+<td>典型</td>
+<td>飞书桥接器、mcp-inspector、system-info</td>
+<td>jira / gerrit / kb（skill + 斜杠命令挂到会话）</td>
+</tr>
+<tr>
+<td>生命周期</td>
+<td>独立进程，与会话解耦</td>
+<td>依赖 opencode 会话加载</td>
+</tr>
+<tr>
+<td>asset 操作</td>
+<td><code>pull</code> / <code>run</code>（不 <code>setup</code>）</td>
+<td><code>pull</code> / <code>setup</code>（部署 skill/command 到项目）</td>
+</tr>
+</tbody>
+</table>
+<p><code>@tool</code> 是<strong>独立服务</strong>（自己拉起服务、对话发生在别处）；<code>@plugin</code> 是<strong>挂在 opencode 会话里</strong>的 skill + 命令集合。</p>
+<h2 id="_7">相关</h2>
+<ul>
+<li>安装与初始化：<a href="install.html">安装与配置</a></li>
+<li>技能系统：<a href="../core/skills.html">技能系统</a></li>
+<li>插件与扩展：<a href="../core/plugins.html">插件与扩展</a></li>
+</ul></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../start/context.html"><span>← 上一篇</span><strong>项目上下文与记忆</strong></a>
+      <a class="pager-link next" href="../core/subagents.html"><span>下一篇 →</span><strong>子代理与编排</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、五类资产</a></li>
+<li><a href="#_2">二、两条入口</a></li>
+<li><a href="#_3">三、操作速查</a></li>
+<li><a href="#_4">四、资产来源与查找优先级</a></li>
+<li><a href="#mirror">五、mirror：本地开发</a></li>
+<li><a href="#_5">六、本地修改与删除</a></li>
+<li><a href="#_6">七、创建与发布</a></li>
+<li><a href="#tool-plugin">八、@tool 还是 @plugin</a></li>
+<li><a href="#_7">相关</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

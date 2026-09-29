@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作流 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li class="active"><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 核心能力 <span class="sep">/</span> <span class="current">工作流</span></nav>
+    <article class="markdown"><blockquote>
+<p>把多步骤任务固化为<strong>可重复执行的 DAG</strong>。工作流用 YAML 描述，由内置 <code>workflow_runner</code> 工具加载执行——适合「每次都要按同样顺序做」的流程：提交流水线、例行检查、周报生成。</p>
+</blockquote>
+<h2 id="_1">一、什么是工作流</h2>
+<p>一个工作流 = 一个 YAML 文件，定义在 <code>.opencode/workflows/</code> 下，由 <code>workflow_runner</code> 加载：</p>
+<pre><code class="language-text">inputs ──▶ [start] ──▶ [节点…] ──▶ [end] ──▶ outputs
+</code></pre>
+<p>关键特征：</p>
+<ul>
+<li><strong>DAG 结构</strong>：节点 + 边，执行顺序由拓扑排序决定，循环依赖会被拒绝；</li>
+<li><strong>真实执行</strong>：<code>code</code> 跑脚本、<code>http</code> 发请求、<code>llm</code> 调模型、<code>agent</code> 多轮循环、<code>tool</code> 调外部命令；</li>
+<li><strong>可传参</strong>：运行时传入 <code>key=value</code>，节点内用模板语法引用。</li>
+</ul>
+<h2 id="yaml">二、YAML 三要素</h2>
+<p>每个工作流由「<strong>元信息 + 节点 + 边</strong>」三部分组成：</p>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>元信息</td>
+<td><code>api_version</code> / <code>name</code> / <code>version</code> / <code>description</code></td>
+<td><code>name</code> 必填，与文件名一致</td>
+</tr>
+<tr>
+<td>运行接口</td>
+<td><code>inputs</code> / <code>outputs</code> / <code>defaults</code></td>
+<td>入参声明、输出映射、默认超时</td>
+</tr>
+<tr>
+<td>节点</td>
+<td><code>nodes[]</code></td>
+<td>每个 <code>{ id, type, data }</code></td>
+</tr>
+<tr>
+<td>边</td>
+<td><code>edges[]</code></td>
+<td>每个 <code>{ source, target, condition? }</code></td>
+</tr>
+</tbody>
+</table>
+<p>最小骨架：</p>
+<pre><code class="language-yaml">api_version: &quot;1&quot;
+name: my-workflow
+description: 工作流说明
+defaults:
+  timeout: 60
+
+inputs:
+  - key: name
+    label: &quot;姓名&quot;
+    type: string
+    required: false
+    default: &quot;world&quot;
+
+nodes:
+  - id: start
+    type: start
+    data:
+      outputs:
+        - key: name
+          value: &quot;{{inputs.name}}&quot;
+  - id: end
+    type: end
+    data:
+      outputs:
+        - key: greeting
+          value: &quot;{{variables.greeting}}&quot;
+
+edges:
+  - source: start
+    target: end
+</code></pre>
+<h2 id="12">三、节点类型（12 种）</h2>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>作用</th>
+<th>关键 data 字段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>start</code></td>
+<td>入口，初始化变量</td>
+<td><code>outputs</code>（key/value，可用 <code>{{inputs.xxx}}</code>）</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td>执行脚本</td>
+<td><code>language</code>（python/bash）、<code>script</code>、<code>timeout</code>、<code>export_var</code></td>
+</tr>
+<tr>
+<td><code>condition</code></td>
+<td>分支判断</td>
+<td><code>mode: llm</code> + <code>prompt</code>，或 <code>expression</code>；<code>branches</code></td>
+</tr>
+<tr>
+<td><code>llm</code></td>
+<td>调用大模型</td>
+<td><code>prompt</code>、<code>system_prompt</code>、<code>model</code>、<code>temperature</code>、<code>export_var</code></td>
+</tr>
+<tr>
+<td><code>http</code></td>
+<td>发 HTTP 请求</td>
+<td><code>url</code>、<code>method</code>、<code>headers</code>、<code>body</code>、<code>export_var</code></td>
+</tr>
+<tr>
+<td><code>template</code></td>
+<td>加载模板文件插值后执行</td>
+<td><code>template</code>（相对工作流目录）、<code>language</code></td>
+</tr>
+<tr>
+<td><code>agent</code></td>
+<td>Agent 多轮循环（工具调用）</td>
+<td><code>prompt</code>、<code>max_turns</code>（默认 3）、<code>model</code></td>
+</tr>
+<tr>
+<td><code>tool</code></td>
+<td>执行外部命令/工具</td>
+<td><code>tool_name</code>、<code>args</code>、<code>fail_on_error</code></td>
+</tr>
+<tr>
+<td><code>foreach</code></td>
+<td>循环迭代子图</td>
+<td><code>iterable</code>、<code>loop_var</code>、<code>subgraph_nodes</code>、<code>concurrent</code></td>
+</tr>
+<tr>
+<td><code>parallel</code></td>
+<td>并行分支</td>
+<td><code>branches</code> / <code>parallel_nodes</code></td>
+</tr>
+<tr>
+<td><code>merge</code></td>
+<td>合并并行/循环结果</td>
+<td><code>source_vars</code></td>
+</tr>
+<tr>
+<td><code>end</code></td>
+<td>结束，汇总输出</td>
+<td><code>outputs</code>，配合顶层 <code>outputs</code> 映射</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>大多数节点支持 <code>export_var</code>（字符串或 <code>{name, value_from}</code> 列表）：脚本/接口返回 JSON 时按 key 提取为后续可用的 <code>{{variables.xxx}}</code>。</p>
+</blockquote>
+<h2 id="_2">四、变量插值</h2>
+<p>节点字段（<code>prompt</code> / <code>script</code> / <code>url</code> / <code>value</code> 等）中可用 <code>{{表达式}}</code> 引用上下文：</p>
+<table>
+<thead>
+<tr>
+<th>表达式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{{inputs.xxx}}</code></td>
+<td>工作流入参</td>
+</tr>
+<tr>
+<td><code>{{variables.xxx}}</code></td>
+<td><code>export_var</code> 导出 / <code>start</code> 初始化的变量</td>
+</tr>
+<tr>
+<td><code>{{node_id.output}}</code></td>
+<td>指定节点输出（如 <code>{{time_check.output.hour}}</code>）</td>
+</tr>
+<tr>
+<td><code>{{node.xxx}}</code></td>
+<td>最近一次产生该 key 的节点输出</td>
+</tr>
+<tr>
+<td><code>{{assets.xxx}}</code></td>
+<td>资产变量（预留）</td>
+</tr>
+</tbody>
+</table>
+<p>管道修饰（可选）：<code>{{expr | default:'值'}}</code>（空值回退）、<code>{{expr | trim}}</code>。</p>
+<h2 id="_3">五、触发方式</h2>
+<p>工作流有两条入口——终端 CLI（不经过 LLM）与对话内工具调用：</p>
+<pre><code class="language-bash"># CLI
+workflow_runner list                      # 列出全部工作流
+workflow_runner validate &lt;name&gt;           # 校验
+workflow_runner run &lt;name&gt; key=value      # 运行（可传输入参数）
+
+# 对话中让 AI 调用 workflow_runner 工具
+#   operation: list | validate | run
+</code></pre>
+<p><code>validate</code> 会检查：缺少 <code>name</code> / <code>nodes</code> / <code>edges</code>、非 start 节点无入边、非 end 节点无出边、<code>condition</code> 缺 <code>expression</code> 或 <code>prompt</code>、<code>http</code> 缺 <code>url</code>、<code>llm</code> 缺 <code>prompt</code>、边引用不存在的节点、依赖环。</p>
+<h2 id="_4">六、内置示例</h2>
+<table>
+<thead>
+<tr>
+<th>工作流</th>
+<th>说明</th>
+<th>用到的节点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>demo-greeting</code></td>
+<td>自包含示例：问候 + 时间 + 条件分支</td>
+<td>start / code / condition / llm / end</td>
+</tr>
+<tr>
+<td><code>commit-flow</code></td>
+<td>标准提交流水线：<code>git diff --check</code> 通过后 add + commit</td>
+<td>tool / condition / code</td>
+</tr>
+<tr>
+<td><code>routine-check</code></td>
+<td>例行健康检查：工作区脏就跑类型检查与测试</td>
+<td>tool / condition / code</td>
+</tr>
+<tr>
+<td><code>weekly-report</code></td>
+<td>周报生成：统计本周提交并按类型分组，LLM 整理成 markdown</td>
+<td>code / llm</td>
+</tr>
+<tr>
+<td><code>jira-submit-close</code></td>
+<td>提审闭环：建单 → 提交暂存 → 编译 → 推送 → 关单</td>
+<td>脚本见 <code>scripts/</code></td>
+</tr>
+<tr>
+<td><code>feishu-task</code></td>
+<td>飞书任务联动</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><code>commit-flow</code> 的分支结构（节选）：</p>
+<pre><code class="language-yaml">nodes:
+  - id: whitespace_check
+    type: tool
+    data: { tool_name: &quot;git diff --check&quot;, timeout: 30 }
+  - id: check_result
+    type: condition
+    data: { expression: &quot;{{whitespace_check.output}} == ''&quot; }
+edges:
+  - { source: check_result, condition: true,  target: do_commit }
+  - { source: check_result, condition: false, target: fail_info }
+</code></pre>
+<h2 id="_5">七、校验与落地</h2>
+<ol>
+<li><strong>先 <code>validate</code> 再 <code>run</code></strong>——循环依赖、缺字段都在校验阶段暴露，别等执行到一半失败；</li>
+<li><strong>参数化而非硬编码</strong>——把仓库路径、周数、提交信息等做成 <code>inputs</code>；</li>
+<li><strong>节点名即依赖</strong>——<code>edges</code> 表达真实数据流向，<code>condition</code> 边实现分支；</li>
+<li><strong><code>fail_on_error</code> 慎用</strong>——<code>false</code> 表示失败也继续（适合「检查类」步骤），默认语义见节点文档；</li>
+<li><strong>对外部命令加 <code>timeout</code></strong>——避免单个节点卡死整个工作流；</li>
+<li><strong><code>llm</code> 节点需要密钥</strong>——依赖工作流 LLM 密钥环境变量（团队网关密钥或 <code>OPENAI_API_KEY</code>，具体见工作流 README）；<code>code</code> 节点依赖 python3。</li>
+</ol>
+<blockquote>
+<p>编排子代理与工作流的分工：工作流适合<strong>确定性、可重复</strong>的固定步骤；需要判断与探索的复杂任务更适合 <a href="subagents.html">子代理与编排</a>。工作流里的 <code>agent</code> / <code>llm</code> 节点则把两者连起来。</p>
+</blockquote></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../core/plan-todo.html"><span>← 上一篇</span><strong>计划与 Todo</strong></a>
+      <a class="pager-link next" href="../core/skills.html"><span>下一篇 →</span><strong>技能系统</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、什么是工作流</a></li>
+<li><a href="#yaml">二、YAML 三要素</a></li>
+<li><a href="#12">三、节点类型（12 种）</a></li>
+<li><a href="#_2">四、变量插值</a></li>
+<li><a href="#_3">五、触发方式</a></li>
+<li><a href="#_4">六、内置示例</a></li>
+<li><a href="#_5">七、校验与落地</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

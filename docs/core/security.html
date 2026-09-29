@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>凭据与权限 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li class="active"><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 核心能力 <span class="sep">/</span> <span class="current">凭据与权限</span></nav>
+    <article class="markdown"><blockquote>
+<p>凭据泄露是 Agent 工具链最现实的风险。opencode 定制版把「凭据」与「权限」拆成三条独立防线：<strong>密钥集中存储（不落 git）+ 权限模式控制操作 + 隐私门禁拦截提交</strong>。三者叠加，保证密钥与内网信息既进不了模型上下文，也进不了版本库。</p>
+</blockquote>
+<h2 id="_1">一、密钥存哪里</h2>
+<p>所有密钥/凭据统一存 <code>~/.config/secrets.env</code>（<strong>0600，非 git</strong>），由 <code>~/.bashrc</code> 顶部注入环境变量，systemd 服务通过 <code>EnvironmentFile</code> 引用。</p>
+<blockquote>
+<p>⚠️ <strong>不要在 <code>~/.bashrc</code> 直接写密钥</strong>——bashrc 是 644 明文、同组可读，且 systemd 服务不加载 bashrc。密钥一律进 <code>secrets.env</code>。</p>
+</blockquote>
+<p>文件格式（<strong>纯 <code>KEY=value</code> 一行一个，不要 <code>export</code> 前缀、不要引号</strong>）：</p>
+<pre><code class="language-text">OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
+ENTERPRISE_API_KEY=xxxxxxxx
+JIRA_TOKEN=xxxxxxxx
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>入口</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TUI 命令（推荐）</td>
+<td><code>/secrets</code> 查看指引，或对话中让 AI 写入</td>
+</tr>
+<tr>
+<td>编辑文件</td>
+<td><code>nano ~/.config/secrets.env</code></td>
+</tr>
+<tr>
+<td>交互式引导</td>
+<td><code>./init.sh --prompt-secrets</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">二、注入机制（谁从哪里读）</h2>
+<table>
+<thead>
+<tr>
+<th>使用方</th>
+<th>读取方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>交互式终端（opencode CLI 等）</td>
+<td><code>~/.bashrc</code> 顶部 <code>set -a; source ~/.config/secrets.env; set +a</code>（<code>set -a</code> 自动导出为环境变量）</td>
+</tr>
+<tr>
+<td>systemd 用户服务</td>
+<td><code>EnvironmentFile=-/home/&lt;user&gt;/.config/secrets.env</code></td>
+</tr>
+<tr>
+<td>opencode 运行时</td>
+<td><code>opencode.json</code> 的 <code>{env:XXX}</code> 引用环境变量</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-bash"># 当前会话手动加载（新终端自动加载）
+set -a; source ~/.config/secrets.env; set +a
+</code></pre>
+<blockquote>
+<p><strong>bashrc 交互守卫陷阱</strong>：<code>~/.bashrc</code> 开头有 <code>case $- in *i*) *) return;; esac</code>，非交互 shell 会提前 return。所以 <code>source secrets.env</code> 必须放在<strong>守卫之前</strong>，否则脚本/cron 等非交互场景拿不到变量。</p>
+</blockquote>
+<h2 id="env-store">三、加密存储（env-store）</h2>
+<p>除明文 <code>secrets.env</code> 外，还提供<strong>加密存储</strong>（AES-256-GCM）：对话中让 AI 调用 <code>env_store</code> 工具。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>env_store set &lt;KEY&gt; &lt;value&gt;</code></td>
+<td>加密写入，值以密文落盘</td>
+</tr>
+<tr>
+<td><code>env_store list</code></td>
+<td>列出变量名（值掩码显示 <code>KEY=****</code>）</td>
+</tr>
+<tr>
+<td><code>env_store delete &lt;KEY&gt;</code></td>
+<td>删除变量</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>实现：<code>aes-256-gcm</code>，随机 12 字节 IV + 认证标签（tag），密文以 <code>{ iv, tag, value }</code> 结构存 <code>~/.config/opencode/secrets.enc</code>；主密钥存 <code>~/.config/opencode/.masterkey</code>（首次使用自动生成 32 字节随机密钥，base64 编码）。</li>
+<li>用途：需要比明文文件更强保护、或不想让值以明文出现在磁盘时使用。</li>
+</ul>
+<h2 id="_3">四、权限模式</h2>
+<p><code>opencode.json</code> 的 <code>permission</code> 字段（或启动时 <code>--mode</code>）控制操作审批粒度：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>trust</code></td>
+<td>自动批准所有操作</td>
+</tr>
+<tr>
+<td><code>balanced</code></td>
+<td>平衡：常见操作自动批准，危险操作确认</td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td>严格：每次操作确认</td>
+</tr>
+<tr>
+<td><code>accept-edits</code></td>
+<td>自动接受编辑</td>
+</tr>
+<tr>
+<td>启动参数</td>
+<td><code>opencode --auto</code> 自动批准未被显式拒绝的权限</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>子代理可单独声明权限（如 explorer 只读：<code>"*": deny</code> + <code>read/glob/grep: allow</code>），子代理权限从父会话派生合并；</li>
+<li>每次工具调用都会写审计记录（<code>~/.config/opencode/audit.log</code>），授权询问也会被审计。</li>
+</ul>
+<h2 id="privacy">五、隐私门禁（privacy 工具）</h2>
+<p>把「隐私红线」从规则升级为<strong>可调用工具</strong>，提交/发布/导出/对话前统一扫描与脱敏：</p>
+<pre><code class="language-bash">privacy scan &lt;path&gt;          # 扫描文件/目录中的敏感信息（内置模式 + 敏感词清单）
+privacy git                  # 检查暂存区（等价 pre-commit 逻辑）
+privacy mask &quot;&lt;文本&gt;&quot;        # 脱敏输出（API key / token / 私钥打码）
+privacy words list           # 敏感词清单
+privacy words add &quot;&lt;正则&gt;&quot;   # 添加敏感词
+privacy words delete &lt;序号&gt;  # 删除敏感词
+</code></pre>
+<p>内置敏感模式：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>匹配</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API Key</td>
+<td><code>sk-…</code></td>
+</tr>
+<tr>
+<td>GitHub Token</td>
+<td><code>ghp_</code> / <code>gho_</code> / <code>ghu_</code> / <code>github_pat_</code></td>
+</tr>
+<tr>
+<td>AWS Access Key</td>
+<td><code>AKIA…</code></td>
+</tr>
+<tr>
+<td>私钥块</td>
+<td><code>-----BEGIN … PRIVATE KEY-----</code></td>
+</tr>
+<tr>
+<td>环境变量密钥赋值</td>
+<td><code>TOKEN/SECRET/PASSWORD/API_KEY/… = &lt;值&gt;</code></td>
+</tr>
+<tr>
+<td>长 Base64 串</td>
+<td>≥ 40 位 base64</td>
+</tr>
+</tbody>
+</table>
+<p><code>privacy scan</code> 输出命中位置，并给出<strong>脱敏后的安全内容</strong>（前 4 位 + <code>***</code> + 末 3 位）。</p>
+<h2 id="sensitive-scansh">六、钩子门禁（sensitive-scan.sh）</h2>
+<p>提交前拦截由 git hooks + 一个共用门禁脚本完成，脚本为 <code>~/.config/opencode/sensitive-scan.sh</code>（本机非 git 文件，opencode 与资产发布 githooks 共用同一逻辑与清单）：</p>
+<table>
+<thead>
+<tr>
+<th>hook</th>
+<th>调用</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.husky/pre-commit</code></td>
+<td><code>sensitive-scan.sh staged</code></td>
+<td>扫描所有暂存文件（<code>git show :&lt;file&gt;</code>），命中即<strong>阻止提交</strong></td>
+</tr>
+<tr>
+<td><code>.husky/commit-msg</code></td>
+<td><code>sensitive-scan.sh message &lt;msg-file&gt;</code></td>
+<td>扫描 commit message，命中即阻止</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>脚本合并「内置模式」与「本机敏感词清单」；</li>
+<li>本机敏感词清单：<code>~/.config/opencode/sensitive-patterns.txt</code>（<strong>非 git</strong>，每行一个正则，<code>#</code> 与空行忽略）；</li>
+<li>未找到门禁脚本时<strong>跳过检查并告警</strong>（不阻断，但存在漏检风险，需确保 init.sh 已执行）。</li>
+</ul>
+<h2 id="_4">七、隐私红线（最高优先级）</h2>
+<ul>
+<li><strong>密钥 / 内网地址 / 主机名 / 人员信息一律不进 git</strong>：仓库内 provider 的 <code>baseURL</code> 用占位符、<code>apiKey</code> 用 <code>{env:XXX}</code> 引用；</li>
+<li>敏感配置放 <code>~/.bashrc</code> 或 <code>~/.config/opencode/</code>（非 git），代码通过环境变量注入；</li>
+<li>提交/发布/导出前统一 <code>privacy git</code> / <code>privacy scan</code>；</li>
+<li>规则详见 <code>.opencode/AGENTS.md</code>「隐私红线」。</li>
+</ul>
+<h2 id="_5">八、备份与迁移</h2>
+<pre><code class="language-bash"># 备份（secrets.env 与 .masterkey 会一起打进去）
+tar -czf ~/opencode-config-backup-$(date +%Y%m%d).tar.gz -C ~/.config/opencode .
+# 恢复
+tar -xzf ~/opencode-config-backup-*.tar.gz -C ~/.config/opencode
+chmod 600 ~/.config/secrets.env ~/.config/opencode/.masterkey
+</code></pre>
+<p>迁移后自检：<code>opencode debug config</code> 确认所用 provider 的 <code>apiKey</code> 非空；<code>opencode run "回复ok" --model &lt;provider/model&gt;</code> 返回内容即成功，报 401 则回查密钥是否配置/是否 <code>source</code>。</p>
+<h2 id="_6">九、落地清单</h2>
+<ol>
+<li>密钥只写 <code>secrets.env</code>（纯 <code>KEY=value</code>，0600），不写 bashrc；</li>
+<li>改完密钥开新终端，或 <code>set -a; source …; set +a</code>；</li>
+<li>危险项目用 <code>strict</code>/<code>balanced</code> 权限模式，探索类子代理用只读权限；</li>
+<li>提交前跑 <code>privacy git</code>；敏感词沉淀进 <code>sensitive-patterns.txt</code>；</li>
+<li>换机 / 重装前 <code>init.sh --backup</code>，还原后重跑密钥自检；</li>
+<li>见 <a href="models.html">模型配置</a> 的 provider 脱敏写法，与本文配合使用。</li>
+</ol></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../core/eval.html"><span>← 上一篇</span><strong>评估系统</strong></a>
+      <a class="pager-link next" href="../core/models.html"><span>下一篇 →</span><strong>模型配置</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、密钥存哪里</a></li>
+<li><a href="#_2">二、注入机制（谁从哪里读）</a></li>
+<li><a href="#env-store">三、加密存储（env-store）</a></li>
+<li><a href="#_3">四、权限模式</a></li>
+<li><a href="#privacy">五、隐私门禁（privacy 工具）</a></li>
+<li><a href="#sensitive-scansh">六、钩子门禁（sensitive-scan.sh）</a></li>
+<li><a href="#_4">七、隐私红线（最高优先级）</a></li>
+<li><a href="#_5">八、备份与迁移</a></li>
+<li><a href="#_6">九、落地清单</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

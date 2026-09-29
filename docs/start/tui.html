@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>启动与界面 · opencode 运行时文档</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" aria-label="打开目录">☰</button>
+  <a class="brand" href="../index.html">opencode 运行时文档</a>
+  <div class="search">
+    <input id="search-input" type="search" placeholder="搜索文档…  (/)" autocomplete="off" aria-label="搜索">
+    <div id="search-results" class="search-results" hidden></div>
+  </div>
+  <nav class="topbar-links"><a href="https://github.com/Wyili/opencode" target="_blank" rel="noopener">仓库</a></nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="nav"><div class="nav-section"><div class="nav-section-title">首页</div><ul><li><a href="../index.html">欢迎</a></li></ul></div><div class="nav-section"><div class="nav-section-title">快速上手</div><ul><li><a href="../start/install.html">安装与配置</a></li><li class="active"><a href="../start/tui.html">启动与界面</a></li><li><a href="../start/context.html">项目上下文与记忆</a></li><li><a href="../start/assets.html">资产与常用命令</a></li></ul></div><div class="nav-section"><div class="nav-section-title">核心能力</div><ul><li><a href="../core/subagents.html">子代理与编排</a></li><li><a href="../core/plan-todo.html">计划与 Todo</a></li><li><a href="../core/workflows.html">工作流</a></li><li><a href="../core/skills.html">技能系统</a></li><li><a href="../core/tools.html">自定义工具</a></li><li><a href="../core/plugins.html">插件与扩展</a></li><li><a href="../core/workscene.html">工作场景</a></li><li><a href="../core/eval.html">评估系统</a></li><li><a href="../core/security.html">凭据与权限</a></li><li><a href="../core/models.html">模型配置</a></li><li><a href="../core/token-economy.html">省 token 与上下文管理</a></li><li><a href="../core/background.html">后台任务与通知</a></li><li><a href="../core/worktree.html">隔离执行与 worktree</a></li></ul></div><div class="nav-section"><div class="nav-section-title">应用实践</div><ul><li><a href="../practice/diagnosis.html">快速定位问题</a></li><li><a href="../practice/orchestration.html">编排思考逻辑</a></li><li><a href="../practice/thinking-ui.html">实时思考与 UI 设计</a></li><li><a href="../practice/tips.html">技巧分享</a></li><li><a href="../practice/faq.html">排障 FAQ</a></li></ul></div><div class="nav-section"><div class="nav-section-title">附录</div><ul><li><a href="../appendix/commands.html">命令速查</a></li><li><a href="../appendix/alignment.html">能力对照说明</a></li></ul></div></nav>
+  </aside>
+  <main class="content">
+    <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 快速上手 <span class="sep">/</span> <span class="current">启动与界面</span></nav>
+    <article class="markdown"><blockquote>
+<p>启动 TUI 只需在项目目录敲 <code>opencode</code>。日常操作都围绕三件事：<strong>发指令、切模型/代理、管会话与上下文</strong>——本文把这三条的入口（命令、快捷键、参数）集中到一张张速查表。</p>
+</blockquote>
+<h2 id="_1">一、启动方式</h2>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动 TUI（当前项目）</td>
+<td><code>opencode</code></td>
+</tr>
+<tr>
+<td>指定项目目录</td>
+<td><code>opencode &lt;项目目录&gt;</code></td>
+</tr>
+<tr>
+<td>继续上次会话</td>
+<td><code>opencode -c</code> / <code>--continue</code></td>
+</tr>
+<tr>
+<td>继续指定会话</td>
+<td><code>opencode -s &lt;id&gt;</code> / <code>--session &lt;id&gt;</code></td>
+</tr>
+<tr>
+<td>继续时派生新会话</td>
+<td><code>opencode -c --fork</code></td>
+</tr>
+<tr>
+<td>指定模型 / 代理</td>
+<td><code>opencode -m &lt;provider/model&gt;</code> / <code>--agent &lt;名称&gt;</code></td>
+</tr>
+<tr>
+<td>附带初始 prompt</td>
+<td><code>opencode --prompt "&lt;文本&gt;"</code></td>
+</tr>
+<tr>
+<td>自动批准权限</td>
+<td><code>opencode --auto</code></td>
+</tr>
+<tr>
+<td>非交互执行</td>
+<td><code>opencode run "任务描述"</code></td>
+</tr>
+<tr>
+<td>启动服务端（headless，供 API / 桥接）</td>
+<td><code>opencode serve</code></td>
+</tr>
+<tr>
+<td>启动服务端并打开 Web 界面</td>
+<td><code>opencode web</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>运行中输入 <code>/</code> 自动弹出命令列表；不确定有什么命令就敲 <code>/</code>。<code>/help</code> 看帮助与快捷键，<code>/docs &lt;主题&gt;</code> 打开官方文档（agents/skills/plugins/mcp/keybinds）。</p>
+</blockquote>
+<h2 id="_2">二、斜杠命令速查</h2>
+<p>TUI 内输入 <code>/</code> 弹出全部命令（本仓库共 40+ 个，完整清单见 <a href="../appendix/commands.html">命令速查</a>）。</p>
+<p><strong>基础操作</strong></p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>用途</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/help</code></td>
+<td>帮助与快捷键</td>
+<td><code>/help</code></td>
+</tr>
+<tr>
+<td><code>/agent &lt;名称&gt;</code></td>
+<td>切换代理</td>
+<td><code>/agent coordinator</code></td>
+</tr>
+<tr>
+<td><code>/sa</code> / <code>/subagent</code></td>
+<td>列出可委派子代理</td>
+<td><code>/sa</code></td>
+</tr>
+<tr>
+<td><code>/plan &lt;目标&gt;</code></td>
+<td>进入计划模式（先分析再实施）</td>
+<td><code>/plan 重构认证模块</code></td>
+</tr>
+<tr>
+<td><code>/plan_checkout [路径]</code></td>
+<td>加载已有计划并进入 plan 模式</td>
+<td><code>/plan_checkout plans/xxx.md</code></td>
+</tr>
+<tr>
+<td><code>/run</code></td>
+<td>执行当前计划</td>
+<td><code>/run</code></td>
+</tr>
+<tr>
+<td><code>/compact</code></td>
+<td>压缩上下文</td>
+<td><code>/compact</code></td>
+</tr>
+<tr>
+<td><code>/compact_run &lt;计划&gt;</code></td>
+<td>压缩上下文后继续执行计划</td>
+<td><code>/compact_run 重构后跑测试</code></td>
+</tr>
+<tr>
+<td><code>/clear</code></td>
+<td>清空上下文（保留记忆）</td>
+<td><code>/clear</code></td>
+</tr>
+<tr>
+<td><code>/context</code></td>
+<td>查看上下文快照</td>
+<td><code>/context</code></td>
+</tr>
+<tr>
+<td><code>/settings</code></td>
+<td>查看当前配置</td>
+<td><code>/settings</code></td>
+</tr>
+<tr>
+<td><code>/secrets</code></td>
+<td>密钥配置指引</td>
+<td><code>/secrets</code></td>
+</tr>
+<tr>
+<td><code>/reload</code></td>
+<td>刷新配置/技能</td>
+<td><code>/reload</code></td>
+</tr>
+<tr>
+<td><code>/cancel</code></td>
+<td>取消当前操作</td>
+<td><code>/cancel</code></td>
+</tr>
+<tr>
+<td><code>/btw &lt;问题&gt;</code></td>
+<td>顺带问小事，不打断主对话</td>
+<td><code>/btw xx函数在哪</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>开发与知识管理</strong></p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/commit</code></td>
+<td>git 提交并推送（含规范前缀）</td>
+</tr>
+<tr>
+<td><code>/todo</code> / <code>/tasks</code></td>
+<td>任务管理（markdown todo / 任务状态流）</td>
+</tr>
+<tr>
+<td><code>/loop "&lt;cron&gt;" &lt;内容&gt;</code></td>
+<td>创建定时提醒</td>
+</tr>
+<tr>
+<td><code>/issues &lt;关键词&gt;</code></td>
+<td>查找 GitHub issue</td>
+</tr>
+<tr>
+<td><code>/translate &lt;文本&gt;</code></td>
+<td>翻译</td>
+</tr>
+<tr>
+<td><code>/copy</code></td>
+<td>复制最后回复</td>
+</tr>
+<tr>
+<td><code>/rmslop</code></td>
+<td>对比 dev 分支移除 AI 生成的 slop</td>
+</tr>
+<tr>
+<td><code>/memory &lt;操作&gt;</code></td>
+<td>查看/编辑自动记忆（<code>/memory list</code>）</td>
+</tr>
+<tr>
+<td><code>/workscene &lt;操作&gt;</code></td>
+<td>场景知识库（<code>/workscene status</code>）</td>
+</tr>
+<tr>
+<td><code>/learn &lt;内容&gt;</code></td>
+<td>提取会话经验到 AGENTS.md</td>
+</tr>
+<tr>
+<td><code>/init &lt;项目&gt;</code></td>
+<td>初始化项目级 <code>.opencode/</code></td>
+</tr>
+<tr>
+<td><code>/plugins &lt;操作&gt;</code></td>
+<td>查看/管理插件</td>
+</tr>
+</tbody>
+</table>
+<p><strong>企业集成</strong>（随插件分发，需在 <code>secrets.env</code> 配置凭据）</p>
+<table>
+<thead>
+<tr>
+<th>命令族</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/jira_*</code></td>
+<td>读/建 Issue、任务、子任务（<code>/jira_get_issue &lt;PROJ-123&gt;</code>）</td>
+</tr>
+<tr>
+<td><code>/gerrit_*</code></td>
+<td>搜索变更 / 查看变更 / 浏览文件 / git grep</td>
+</tr>
+<tr>
+<td><code>/kb_*</code></td>
+<td>Confluence 搜索 / 读页 / 建页</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>交互式资产列表用 <code>/asset_manager</code>（✅/⬜ 列表，不经 LLM），详见 <a href="assets.html">资产与常用命令</a>。</p>
+</blockquote>
+<h2 id="_3">三、快捷键</h2>
+<p>TUI 内默认键位（可在 <code>~/.config/opencode/tui.json</code> 自定义；<code>leader</code> 默认 <code>Ctrl+X</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>默认键位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>切换主代理</td>
+<td><code>Tab</code> / <code>Shift+Tab</code></td>
+</tr>
+<tr>
+<td>命令列表</td>
+<td><code>Ctrl+P</code></td>
+</tr>
+<tr>
+<td>新会话</td>
+<td><code>&lt;leader&gt;n</code></td>
+</tr>
+<tr>
+<td>会话列表 / 切换</td>
+<td><code>&lt;leader&gt;l</code></td>
+</tr>
+<tr>
+<td>切换模型</td>
+<td><code>&lt;leader&gt;m</code>（即 <code>Ctrl+X m</code>）</td>
+</tr>
+<tr>
+<td>循环最近模型</td>
+<td><code>F2</code> / <code>Shift+F2</code></td>
+</tr>
+<tr>
+<td>中断当前任务</td>
+<td><code>Escape</code></td>
+</tr>
+<tr>
+<td>压缩上下文</td>
+<td><code>&lt;leader&gt;c</code></td>
+</tr>
+<tr>
+<td>复制消息</td>
+<td><code>&lt;leader&gt;y</code></td>
+</tr>
+<tr>
+<td>导出会话</td>
+<td><code>&lt;leader&gt;x</code></td>
+</tr>
+<tr>
+<td>打开编辑器</td>
+<td><code>&lt;leader&gt;e</code></td>
+</tr>
+<tr>
+<td>切换侧边栏</td>
+<td><code>&lt;leader&gt;b</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">四、会话管理</h2>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>入口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>新建会话</td>
+<td><code>&lt;leader&gt;n</code> 或 <code>opencode</code></td>
+</tr>
+<tr>
+<td>会话列表 / 切换</td>
+<td><code>&lt;leader&gt;l</code> / <code>opencode session [--max-count N]</code></td>
+</tr>
+<tr>
+<td>继续上次会话</td>
+<td><code>opencode -c</code></td>
+</tr>
+<tr>
+<td>继续指定会话</td>
+<td><code>opencode -s &lt;id&gt;</code>（<code>--fork</code> 派生新会话）</td>
+</tr>
+<tr>
+<td>中断当前任务</td>
+<td><code>Escape</code></td>
+</tr>
+<tr>
+<td>导出会话（可脱敏）</td>
+<td><code>&lt;leader&gt;x</code> / <code>opencode export [--sanitize]</code></td>
+</tr>
+<tr>
+<td>使用统计</td>
+<td><code>opencode stats [--days N]</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>会话数据库会自动清理（<code>OPENCODE_EVENT_CLEANUP=1</code> 由 <code>init.sh</code> 写入：保留 30 天 / 上限 500MB），避免 event 表膨胀。</p>
+</blockquote>
+<h2 id="_5">五、切换模型</h2>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型选择器</td>
+<td><code>&lt;leader&gt;m</code>（<code>Ctrl+X m</code>）；<code>F2</code> / <code>Shift+F2</code> 循环最近模型</td>
+</tr>
+<tr>
+<td>启动时指定</td>
+<td><code>opencode -m &lt;provider&gt;/&lt;model&gt;</code></td>
+</tr>
+<tr>
+<td>会话内切换</td>
+<td>选择器面板（<code>model_picker</code> / <code>model_tabs</code> 在 <code>tui.json</code> 配置）</td>
+</tr>
+<tr>
+<td>列出可用模型</td>
+<td><code>opencode models [--refresh]</code></td>
+</tr>
+<tr>
+<td>永久默认</td>
+<td>改 <code>opencode.json</code> 的 <code>model</code> / <code>small_model</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>小模型（<code>small_model</code>）用于标题生成、压缩等轻任务；子代理可在 frontmatter 写 <code>model: small</code> 直接复用同一档（explorer 已默认挂载）。详见 <a href="../core/models.html">模型配置</a>。</p>
+</blockquote>
+<h2 id="_6">六、权限模型</h2>
+<p>opencode 的权限按<strong>工具</strong>声明，每个工具取 <code>ask</code>（询问）/ <code>allow</code>（直接允许）/ <code>deny</code>（拒绝），写在 <code>opencode.json</code> 的 <code>permission</code> 字段：</p>
+<pre><code class="language-jsonc">{
+  &quot;permission&quot;: {
+    &quot;edit&quot;: &quot;allow&quot;,
+    &quot;bash&quot;: &quot;ask&quot;,
+    &quot;webfetch&quot;: &quot;ask&quot;
+  }
+}
+</code></pre>
+<ul>
+<li>可整体给一个值：<code>"permission": "ask"</code> 等价于对所有工具生效（<code>"*": "ask"</code>）；</li>
+<li>常用键：<code>read</code> / <code>edit</code> / <code>glob</code> / <code>grep</code> / <code>list</code> / <code>bash</code> / <code>task</code> / <code>webfetch</code> / <code>websearch</code> / <code>lsp</code> / <code>skill</code> 等；</li>
+<li>启动参数 <code>opencode --auto</code> 自动批准<strong>未被显式拒绝</strong>的权限（危险，谨慎使用）。</li>
+</ul>
+<blockquote>
+<p>内部「<strong>参考实现</strong>」用 <code>approval_mode</code> 暴露四个预设（<code>strict</code> / <code>balanced</code> / <code>accept_edits</code> / <code>trust</code>）。opencode 定制版没有同名预设开关，而是用上面的<strong>工具级规则</strong>表达等价效果——例如「平衡」≈ 常见工具 <code>allow</code>、危险操作 <code>ask</code>。</p>
+</blockquote>
+<h2 id="_7">七、上下文与压缩</h2>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>入口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>压缩上下文（保留近期 token）</td>
+<td><code>&lt;leader&gt;c</code> 或 <code>/compact</code></td>
+</tr>
+<tr>
+<td>查看上下文快照</td>
+<td><code>/context</code></td>
+</tr>
+<tr>
+<td>清空上下文（仅记忆）</td>
+<td><code>/clear</code></td>
+</tr>
+<tr>
+<td>压缩策略配置</td>
+<td><code>opencode.json</code> → <code>compaction</code>（<code>auto</code> / <code>tail_turns</code> / <code>preserve_recent_tokens</code> / <code>reserved</code>）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>长会话不压缩会持续重发旧历史；换任务尽量 <code>/new</code>（或 <code>&lt;leader&gt;n</code>），原理见 <a href="../core/token-economy.html">省 token 与上下文管理</a>。</p>
+</blockquote>
+<h2 id="_8">相关</h2>
+<ul>
+<li>安装与初始化：<a href="install.html">安装与配置</a></li>
+<li>项目上下文与记忆：<a href="context.html">项目上下文与记忆</a></li>
+<li>完整命令清单：<a href="../appendix/commands.html">命令速查</a></li>
+</ul></article>
+    <nav class="pager">
+      <a class="pager-link prev" href="../start/install.html"><span>← 上一篇</span><strong>安装与配置</strong></a>
+      <a class="pager-link next" href="../start/context.html"><span>下一篇 →</span><strong>项目上下文与记忆</strong></a>
+    </nav>
+  </main>
+  <aside class="toc">
+    <div class="toc-inner">
+      <div class="toc-title">本页目录</div>
+      <div class="toc">
+<ul>
+<li><a href="#_1">一、启动方式</a></li>
+<li><a href="#_2">二、斜杠命令速查</a></li>
+<li><a href="#_3">三、快捷键</a></li>
+<li><a href="#_4">四、会话管理</a></li>
+<li><a href="#_5">五、切换模型</a></li>
+<li><a href="#_6">六、权限模型</a></li>
+<li><a href="#_7">七、上下文与压缩</a></li>
+<li><a href="#_8">相关</a></li>
+</ul>
+</div>
+
+    </div>
+  </aside>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>
