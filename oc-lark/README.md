@@ -1,5 +1,7 @@
 # oc-lark 展示页
 
+**在线地址（渲染版）** → <https://wyili.github.io/oc-web/oc-lark/>
+
 oc-lark 的产品官网（挂载于 oc-web 站点 `/oc-lark/` 路径），GitHub Pages 静态落地页。当前为第五轮 UI 改造版（`web-refresh-05`），使用单文件 `index.html`，以深色终端 Hero、分层蓝灰主体、紧凑导航、中心化首屏、清晰 section 标题和规律卡片网格建立克制的产品官网节奏。页面包含版本与许可证信息、终端展示、核心特性、架构流程、CLI/飞书命令、配置指南、效果展示、本地控制台、FAQ 与页脚；不复制参考站点的品牌或原文。
 
 ## 产品定位
