@@ -23,24 +23,23 @@
   </aside>
   <main class="content">
     <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 快速上手 <span class="sep">/</span> <span class="current">安装与配置</span></nav>
-    <article class="markdown"><blockquote>
-<p>顺序：<strong>先安装代码，再初始化</strong>。新机器 ① 拉代码 <code>curl -fsSL https://raw.githubusercontent.com/Wyili/opencode/dev/bootstrap.sh | bash</code> → ② 初始化 + 编译 <code>./init.sh --build</code> → ③ <code>source ~/.bashrc</code>；已有仓库直接 <code>cd ~/opencode &amp;&amp; ./init.sh</code>。</p>
-</blockquote>
-<p>opencode 定制版 = <strong>本仓库源码编译</strong>。二进制不进 git（<code>dist/</code> 被忽略），所以新机器必须本地编译一次（不要装官方版）。<code>init.sh</code> 负责把仓库里的运行时配置层部署为全局配置（<code>~/.config/opencode/</code>）。</p>
-<h2 id="_1">一、新机器安装</h2>
-<pre><code class="language-bash"># ① 拉代码 + 部署全局配置（自动装 bun、生成 opencode.json、同步全局、提示隐私信息）
-curl -fsSL https://raw.githubusercontent.com/Wyili/opencode/dev/bootstrap.sh | bash
+    <article class="markdown"><blockquote class="warn"><p><strong>先安装代码，再初始化。</strong> opencode 定制版 = <strong>本仓库源码编译</strong>（二进制不进 git），新机器必须本地编译一次——<strong>不要装官方版</strong>；<code>init.sh</code> 负责把运行时配置层部署为全局配置（<code>~/.config/opencode/</code>）。</p></blockquote>
 
-# ② 初始化 + 编译定制版二进制（含本仓库所有定制功能）
-opencode init --build          # 或 cd ~/opencode &amp;&amp; ./init.sh --build
+<h2 id="_1">一、快速开始（三步接通）</h2>
+<div class="qs">
+<div class="qs-head">新机器 · 三步接通（约 5 分钟）</div>
+<div class="qs-steps">
+<div class="qs-step"><span class="qs-num">1</span><div class="qs-main"><div class="qs-label">拉代码 + 部署全局配置（自动装 bun、生成 opencode.json、同步全局）</div><div class="qs-cmd"><code>curl -fsSL https://raw.githubusercontent.com/Wyili/opencode/dev/bootstrap.sh | bash</code></div></div></div>
+<div class="qs-step"><span class="qs-num">2</span><div class="qs-main"><div class="qs-label">初始化 + 编译定制版二进制（含本仓库所有定制功能）</div><div class="qs-cmd"><code>./init.sh --build</code></div></div></div>
+<div class="qs-step"><span class="qs-num">3</span><div class="qs-main"><div class="qs-label">新终端生效</div><div class="qs-cmd"><code>source ~/.bashrc</code></div></div></div>
+</div>
+<div class="qs-foot">已有仓库：<code>cd ~/opencode &amp;&amp; ./init.sh</code>（无需重新 clone）</div>
+</div>
 
-# ③ 新终端生效
-source ~/.bashrc
-</code></pre>
 <ul>
-<li><code>bootstrap.sh</code>：默认 clone 到 <code>~/opencode</code>（可用 <code>OPENCODE_INSTALL_DIR</code> 改），随后调用 <code>init.sh</code>；含平台检测（Linux 主线 / macOS 实验提示 / Windows 引导 WSL）；</li>
+<li><code>bootstrap.sh</code>：默认 clone 到 <code>~/opencode</code>（可用 <code>OPENCODE_INSTALL_DIR</code> 改），随后调用 <code>init.sh</code>，含平台检测（Linux 主线 / macOS 实验提示 / Windows 引导 WSL）；</li>
 <li>编译需网络（models.dev 模型清单 + npm 镜像）；离线编译需先缓存 <code>~/.cache/opencode/models.json</code>；</li>
-<li>产物：<code>packages/opencode/dist/opencode-*/bin/opencode</code>（按平台探测，Linux 为 <code>opencode-linux-x64</code>），自动 symlink 到 <code>~/.local/bin/opencode</code>；</li>
+<li>产物：<code>packages/opencode/dist/opencode-*/bin/opencode</code>（按平台探测，Linux 为 <code>opencode-linux-x64</code>），自动 symlink 到 <code>~/.local/bin/opencode</code>。</li>
 </ul>
 <h2 id="_2">二、三种初始化方式</h2>
 <table>
@@ -212,6 +211,8 @@ source ~/.bashrc
 </tr>
 </tbody>
 </table>
+<blockquote class="warn"><p><strong><code>--reset</code> 不可逆</strong>：会清空 <code>secrets.env</code> / <code>.masterkey</code> / <code>MEMORY.md</code> / <code>sensitive-patterns.txt</code>（先自动备份到 <code>/tmp</code>）。执行前先跑 <code>./init.sh --backup</code> 更稳妥。</p></blockquote>
+
 <blockquote>
 <p><code>opencode.json</code> 是<strong>唯一持久配置</strong>（非 git）。<code>--force</code> 重建时会从旧备份自动合并 <code>model</code> / <code>small_model</code> / 模板之外的私有 provider，并给缺 <code>limit</code> 的私有模型注入默认预算（<code>context=200000 / output=32768</code>），保证自动压缩能触发。</p>
 </blockquote>
@@ -417,7 +418,7 @@ opencode run &quot;回复ok&quot; --model openai/gpt-5.4   # 实际调用验证�
       <div class="toc-title">本页目录</div>
       <div class="toc">
 <ul>
-<li><a href="#_1">一、新机器安装</a></li>
+<li><a href="#_1">一、快速开始（三步接通）</a></li>
 <li><a href="#_2">二、三种初始化方式</a></li>
 <li><a href="#_3">三、依赖</a></li>
 <li><a href="#initsh">四、init.sh 自动完成什么</a></li>

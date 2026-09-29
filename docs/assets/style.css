@@ -185,6 +185,7 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
   border-radius: 5px;
   padding: 1px 5px;
+  overflow-wrap: anywhere;
 }
 
 .markdown pre {
@@ -284,4 +285,98 @@ a:hover { text-decoration: underline; }
   }
   .sidebar.open { transform: translateX(0); }
   .search { width: min(220px, 42vw); }
+}
+
+/* ── 重点组件：快速开始卡片 / 警示引用 / 代码复制 ── */
+.qs {
+  margin: 18px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.qs-head {
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+}
+.qs-steps { display: grid; grid-template-columns: minmax(0, 1fr); }
+.qs-step {
+  display: flex;
+  gap: 14px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.qs-step:last-child { border-bottom: none; }
+.qs-num {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.qs-main { min-width: 0; flex: 1; }
+.qs-label { font-size: 14px; font-weight: 600; margin-bottom: 7px; }
+.qs-cmd {
+  position: relative;
+  padding: 8px 62px 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.qs-cmd code { background: none; border: none; padding: 0; font-size: 13px; }
+.qs-foot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+.markdown blockquote.warn {
+  border-left-color: #d97706;
+  background: #fff7e6;
+}
+@media (prefers-color-scheme: dark) {
+  .markdown blockquote.warn { background: #241a0a; }
+}
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+pre.has-copy { position: relative; }
+pre.has-copy:hover .copy-btn,
+.copy-btn:focus-visible { opacity: 1; }
+.copy-btn.ok { color: #1a7f37; border-color: #1a7f37; }
+.qs-cmd .copy-btn {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  opacity: 1;
+}
+@media (hover: none) {
+  pre.has-copy .copy-btn { opacity: 1; }
 }

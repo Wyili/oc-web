@@ -18,6 +18,52 @@
     });
   }
 
+  // ── 代码复制按钮 ────────────────────────────
+  function copyText(text, btn) {
+    function done() {
+      btn.textContent = "已复制";
+      btn.classList.add("ok");
+      setTimeout(function () {
+        btn.textContent = "复制";
+        btn.classList.remove("ok");
+      }, 1600);
+    }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+  function attachCopy(host, text) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-btn";
+    btn.textContent = "复制";
+    btn.setAttribute("aria-label", "复制代码");
+    btn.addEventListener("click", function () { copyText(text, btn); });
+    host.appendChild(btn);
+  }
+  document.querySelectorAll(".markdown pre").forEach(function (pre) {
+    var code = pre.querySelector("code");
+    var text = (code || pre).textContent.replace(/\s+$/, "");
+    pre.classList.add("has-copy");
+    attachCopy(pre, text);
+  });
+  document.querySelectorAll(".markdown .qs-cmd").forEach(function (cell) {
+    var code = cell.querySelector("code");
+    attachCopy(cell, (code || cell).textContent.trim());
+  });
+
   // ── 搜索 ───────────────────────────────────
   var input = document.getElementById("search-input");
   var results = document.getElementById("search-results");
