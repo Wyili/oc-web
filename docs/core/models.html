@@ -46,19 +46,58 @@
 <td>小模型（标题生成、压缩等轻量任务；子代理可复用）</td>
 <td><code>&lt;provider&gt;/&lt;model&gt;</code>，如 <code>deepseek/deepseek-chat</code></td>
 </tr>
+<tr>
+<td><code>vision_model</code></td>
+<td>视觉模型（可选；<code>auto/vision</code> 档位的解析目标）</td>
+<td><code>&lt;provider&gt;/&lt;model&gt;</code></td>
+</tr>
 </tbody>
 </table>
-<p>两者都在 <code>~/.config/opencode/opencode.json</code> 中配置：</p>
+<p>这些字段都在 <code>~/.config/opencode/opencode.json</code> 中配置：</p>
 <pre><code class="language-jsonc">{
   &quot;model&quot;: &quot;openai/gpt-5.4&quot;,
-  &quot;small_model&quot;: &quot;deepseek/deepseek-chat&quot;
+  &quot;small_model&quot;: &quot;deepseek/deepseek-chat&quot;,
+  &quot;vision_model&quot;: &quot;openai/gpt-5.4&quot; // 可选：供 auto/vision 档位使用
 }
 </code></pre>
-<h2 id="model-small">二、子代理默认小模型（<code>model: small</code>）</h2>
-<p>agent frontmatter 支持一个保留别名 <code>model: small</code>：解析为当前 provider 的<strong>小模型</strong>。</p>
+<h2 id="small-auto">二、模型档位别名（<code>small</code> 与 <code>auto/*</code>）</h2>
+<p>agent frontmatter、<code>opencode.json</code> 顶层 <code>model</code>、启动参数 <code>-m</code> 都支持<strong>档位别名</strong>——用虚拟档位表达「哪档模型干哪类活」：</p>
+<table>
+<thead>
+<tr>
+<th>别名</th>
+<th>解析为</th>
+<th>回退行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>small</code> / <code>auto/flash</code></td>
+<td>小模型（<code>small_model</code>）</td>
+<td>解析不到时回退主力模型（子代理配置里则回退父会话模型）</td>
+</tr>
+<tr>
+<td><code>auto</code> / <code>auto/pro</code></td>
+<td>主力模型（<code>model</code>）</td>
+<td>——</td>
+</tr>
+<tr>
+<td><code>auto/vision</code></td>
+<td>视觉模型（<code>vision_model</code>）</td>
+<td>未配置或解析失败时回退主力模型</td>
+</tr>
+</tbody>
+</table>
+<p><code>small</code> / <code>auto/flash</code> 的小模型解析顺序：</p>
+<ol>
+<li>取 <code>opencode.json</code> 的 <code>small_model</code>（若配置）；</li>
+<li>否则按 provider 推断小模型（优先 <code>gemini-flash</code> / <code>gpt-nano</code> / <code>claude-haiku</code> 家族）；</li>
+<li>都解析不到时<strong>回退主力模型</strong>（子代理配置中则不设置 <code>model</code>，回退父会话模型）。</li>
+</ol>
+<p>子代理 frontmatter 用法示例：</p>
 <pre><code class="language-markdown">---
 mode: subagent
-model: small
+model: auto/flash
 description: 只读代码探索代理
 permission:
   &quot;*&quot;: deny
@@ -67,13 +106,8 @@ permission:
   grep: allow
 ---
 </code></pre>
-<p>解析顺序：</p>
-<ol>
-<li>取 <code>opencode.json</code> 的 <code>small_model</code>（若配置）；</li>
-<li>否则按 provider 推断小模型（优先 <code>gemini-flash</code> / <code>gpt-nano</code> / <code>claude-haiku</code> 家族）；</li>
-<li>都解析不到时<strong>不设置 <code>model</code></strong>，任务执行回退到父会话模型。</li>
-</ol>
 <blockquote>
+<p>未识别的档位（如 <code>auto/xxx</code>）按普通模型名处理，走标准「模型不存在」报错——不会静默选错模型。</p>
 <p><code>.opencode/agent/explorer.md</code> <strong>已默认挂载 <code>model: small</code></strong>：探索、扫描这类轻任务走小模型档，重活仍由主代理/executor 用主力模型。这就是「把工作放进正确的模型」。</p>
 </blockquote>
 <h2 id="provider">三、Provider 配置写法</h2>
@@ -167,7 +201,7 @@ permission:
 </tr>
 <tr>
 <td>启动时指定</td>
-<td><code>opencode -m &lt;provider&gt;/&lt;model&gt;</code></td>
+<td><code>opencode -m &lt;provider&gt;/&lt;model&gt;</code>（也支持档位别名，如 <code>-m auto/flash</code>）</td>
 </tr>
 <tr>
 <td>会话内切换</td>
@@ -175,7 +209,7 @@ permission:
 </tr>
 <tr>
 <td>永久默认</td>
-<td>改 <code>opencode.json</code> 的 <code>model</code> / <code>small_model</code> 字段</td>
+<td>改 <code>opencode.json</code> 的 <code>model</code> / <code>small_model</code> / <code>vision_model</code> 字段</td>
 </tr>
 </tbody>
 </table>
@@ -221,8 +255,8 @@ permission:
 </ul>
 <h2 id="_4">七、落地清单</h2>
 <ol>
-<li><strong>配好两档</strong>：<code>model</code> 用主力，<code>small_model</code> 用轻量档；</li>
-<li><strong>轻活走小模型</strong>：探索/摘要/标题交给 <code>model: small</code> 的子代理（explorer 已内置）；</li>
+<li><strong>配好两档</strong>：<code>model</code> 用主力，<code>small_model</code> 用轻量档（有视觉任务再加 <code>vision_model</code>）；</li>
+<li><strong>轻活走档位别名</strong>：探索/摘要/标题写 <code>model: small</code>（或 <code>auto/flash</code>），explorer 已内置；</li>
 <li><strong>重活再上主力</strong>：需要推理/长链路的任务用主代理与 executor；</li>
 <li><strong>provider 写脱敏值</strong>：<code>baseURL</code> 用占位符、<code>apiKey</code> 用 <code>{env:XXX}</code>，密钥进 <code>secrets.env</code>（见<a href="security.html">凭据与权限</a>）；</li>
 <li><strong>模型过旧就刷新</strong>：<code>opencode models --refresh</code>；</li>
@@ -239,7 +273,7 @@ permission:
       <div class="toc">
 <ul>
 <li><a href="#_1">一、主力模型与小模型</a></li>
-<li><a href="#model-small">二、子代理默认小模型（model: small）</a></li>
+<li><a href="#small-auto">二、模型档位别名（small 与 auto/*）</a></li>
 <li><a href="#provider">三、Provider 配置写法</a><ul>
 <li><a href="#provider_1">企业 / 私有 provider（脱敏示例）</a></li>
 </ul>

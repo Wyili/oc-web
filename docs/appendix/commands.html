@@ -24,7 +24,7 @@
   <main class="content">
     <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 附录 <span class="sep">/</span> <span class="current">命令速查</span></nav>
     <article class="markdown"><blockquote>
-<p>本页以仓库实际文件为准：<strong>斜杠命令</strong>来自 <code>.opencode/command/*.md</code>（45 个），<strong>CLI 命令</strong>来自 <code>bin/opencode</code> wrapper 与 <code>init.sh</code>。TUI 内输入 <code>/</code> 会弹出全部列表；<code>$ARGUMENTS</code> 表示命令后可跟参数。</p>
+<p>本页以仓库实际文件为准：<strong>斜杠命令</strong>来自 <code>.opencode/command/*.md</code>（46 个），<strong>CLI 命令</strong>来自 <code>bin/opencode</code> wrapper 与 <code>init.sh</code>。TUI 内输入 <code>/</code> 会弹出全部列表；<code>$ARGUMENTS</code> 表示命令后可跟参数。</p>
 </blockquote>
 <h2 id="tui">一、斜杠命令（TUI 内）</h2>
 <h3 id="_1">基础与信息</h3>
@@ -264,6 +264,23 @@
 </tr>
 </tbody>
 </table>
+<h3 id="_7">运行与托管</h3>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>用途</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/daemon &lt;子命令&gt;</code></td>
+<td>多工作区服务托管（注册 / 启停 / 日志 / systemd 自启）</td>
+<td><code>/daemon list</code>、<code>/daemon start --all</code></td>
+</tr>
+</tbody>
+</table>
 <h3 id="jira">Jira</h3>
 <table>
 <thead>
@@ -350,7 +367,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_7">飞书表格</h3>
+<h3 id="_8">飞书表格</h3>
 <table>
 <thead>
 <tr>
@@ -379,7 +396,7 @@
 - <code>/help</code>、<code>/agent &lt;名称&gt;</code> 等由 opencode 内置提供，不属于本仓库命令文件。</p>
 </blockquote>
 <h2 id="cli-tui">二、CLI 命令（TUI 外 / 脚本 / 自动化）</h2>
-<h3 id="_8">启动与运行</h3>
+<h3 id="_9">启动与运行</h3>
 <table>
 <thead>
 <tr>
@@ -418,11 +435,15 @@
 </tr>
 <tr>
 <td><code>opencode --auto</code></td>
-<td>自动批准未被显式拒绝的权限</td>
+<td>自动批准未被显式拒绝的权限（等价 <code>--mode trust</code>）</td>
 </tr>
 <tr>
 <td><code>opencode run "&lt;任务&gt;"</code></td>
 <td>非交互执行任务</td>
+</tr>
+<tr>
+<td><code>opencode run --mode &lt;档位&gt;</code></td>
+<td>审批档位：<code>strict</code> / <code>balanced</code> / <code>accept-edits</code> / <code>trust</code></td>
 </tr>
 <tr>
 <td><code>opencode run -f &lt;文件&gt; --format json</code></td>
@@ -438,7 +459,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_9">初始化与维护</h3>
+<h3 id="_10">初始化与维护</h3>
 <table>
 <thead>
 <tr>
@@ -489,7 +510,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_10">会话与诊断</h3>
+<h3 id="_11">会话与诊断</h3>
 <table>
 <thead>
 <tr>
@@ -525,7 +546,7 @@
 </tbody>
 </table>
 <blockquote>
-<p>底层等价：<code>./init.sh --build</code> = 手动 <code>cd packages/opencode &amp;&amp; bun run build --single</code>；产物 <code>packages/opencode/dist/opencode-linux-x64/bin/opencode</code> 自动 symlink 到 <code>~/.local/bin/opencode</code>。</p>
+<p>底层等价：<code>./init.sh --build</code> = 手动 <code>cd packages/opencode &amp;&amp; bun run build --single</code>；产物 <code>packages/opencode/dist/opencode-*/bin/opencode</code>（按平台探测）自动 symlink 到 <code>~/.local/bin/opencode</code>。</p>
 </blockquote>
 <h2 id="wrapper-bin-llm">三、本地 wrapper 命令（<code>bin/</code>，不经过 LLM）</h2>
 <p><code>init.sh</code> 会把这些 CLI 写到 <code>~/.config/opencode/bin/</code>（已在 PATH 中），可直接在终端调用：</p>
@@ -538,8 +559,12 @@
 </thead>
 <tbody>
 <tr>
-<td><code>asset list/pull/setup/run/push/status/info/new/export</code></td>
-<td>资产管理（<code>@agent/@skill/@tool/@launcher/@plugin</code>）</td>
+<td><code>asset list/pull/install/bin/setup/run/push/status/info/new/export</code></td>
+<td>资产管理（<code>@agent/@skill/@tool/@launcher/@plugin</code>；<code>bin</code> 生成可执行命令）</td>
+</tr>
+<tr>
+<td><code>oc-daemon add/list/start/stop/restart/status/logs/install-service</code></td>
+<td>多工作区服务托管（注册 / 启停 / 日志 / systemd 用户服务自启）</td>
 </tr>
 <tr>
 <td><code>plan init/write/sub/status/run/update</code></td>
@@ -599,16 +624,17 @@
 <li><a href="#_4">开发与协作</a></li>
 <li><a href="#_5">项目初始化</a></li>
 <li><a href="#_6">子代理</a></li>
+<li><a href="#_7">运行与托管</a></li>
 <li><a href="#jira">Jira</a></li>
 <li><a href="#gerrit">Gerrit</a></li>
 <li><a href="#kbconfluence">KB（Confluence）</a></li>
-<li><a href="#_7">飞书表格</a></li>
+<li><a href="#_8">飞书表格</a></li>
 </ul>
 </li>
 <li><a href="#cli-tui">二、CLI 命令（TUI 外 / 脚本 / 自动化）</a><ul>
-<li><a href="#_8">启动与运行</a></li>
-<li><a href="#_9">初始化与维护</a></li>
-<li><a href="#_10">会话与诊断</a></li>
+<li><a href="#_9">启动与运行</a></li>
+<li><a href="#_10">初始化与维护</a></li>
+<li><a href="#_11">会话与诊断</a></li>
 </ul>
 </li>
 <li><a href="#wrapper-bin-llm">三、本地 wrapper 命令（bin/，不经过 LLM）</a></li>

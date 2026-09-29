@@ -38,9 +38,9 @@ opencode init --build          # 或 cd ~/opencode &amp;&amp; ./init.sh --build
 source ~/.bashrc
 </code></pre>
 <ul>
-<li><code>bootstrap.sh</code>：默认 clone 到 <code>~/opencode</code>（可用 <code>OPENCODE_INSTALL_DIR</code> 改），随后调用 <code>init.sh</code>；</li>
+<li><code>bootstrap.sh</code>：默认 clone 到 <code>~/opencode</code>（可用 <code>OPENCODE_INSTALL_DIR</code> 改），随后调用 <code>init.sh</code>；含平台检测（Linux 主线 / macOS 实验提示 / Windows 引导 WSL）；</li>
 <li>编译需网络（models.dev 模型清单 + npm 镜像）；离线编译需先缓存 <code>~/.cache/opencode/models.json</code>；</li>
-<li>产物：<code>packages/opencode/dist/opencode-linux-x64/bin/opencode</code>，自动 symlink 到 <code>~/.local/bin/opencode</code>。</li>
+<li>产物：<code>packages/opencode/dist/opencode-*/bin/opencode</code>（按平台探测，Linux 为 <code>opencode-linux-x64</code>），自动 symlink 到 <code>~/.local/bin/opencode</code>；</li>
 </ul>
 <h2 id="_2">二、三种初始化方式</h2>
 <table>

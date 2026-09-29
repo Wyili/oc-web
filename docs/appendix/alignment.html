@@ -42,19 +42,19 @@
 <td>1</td>
 <td>安装与更新</td>
 <td>🔵</td>
-<td>多平台一键脚本 → <code>bootstrap.sh</code>（拉取+部署+提示）+ <code>init.sh</code>（幂等 / 覆盖策略 / 备份），定制版源码编译</td>
+<td>多平台一键脚本 → <code>bootstrap.sh</code>（拉取+部署+平台检测）+ <code>init.sh</code>（幂等 / 覆盖策略 / 备份），定制版源码编译</td>
 </tr>
 <tr>
 <td>2</td>
 <td>界面形态</td>
 <td>🔵</td>
-<td>终端 + Web 工作台（多面板）→ TUI 主线 + <code>opencode web</code>（server + Web 界面）/ <code>serve</code>（headless）</td>
+<td>终端 + Web 工作台（多面板）→ TUI 主线 + <code>opencode web</code>（会话工作台）/ <code>serve</code>（headless）</td>
 </tr>
 <tr>
 <td>3</td>
 <td>模型与档位</td>
-<td>🔵</td>
-<td>轻量 / 主力 / 视觉虚拟档位 → <code>model</code> / <code>small_model</code> + <code>model: small</code> 别名 + 模型选择器</td>
+<td>✅</td>
+<td>轻量 / 主力 / 视觉虚拟档位 → <code>auto/flash</code> / <code>auto</code>·<code>auto/pro</code> / <code>auto/vision</code> 档位别名（<code>vision_model</code> 可配，<code>model: small</code> 统一语义）</td>
 </tr>
 <tr>
 <td>4</td>
@@ -137,8 +137,8 @@
 <tr>
 <td>17</td>
 <td>凭据与权限</td>
-<td>🔵</td>
-<td>四档审批模式 → per-tool allow/ask/deny 等价；加密 env 对齐</td>
+<td>✅</td>
+<td>四档审批模式 → per-tool allow/ask/deny + <code>run --mode strict/balanced/accept-edits/trust</code> 四档；加密 env 对齐</td>
 </tr>
 <tr>
 <td>18</td>
@@ -161,14 +161,14 @@
 <tr>
 <td>21</td>
 <td>多工作区托管</td>
-<td>🟡</td>
-<td>中心 daemon（注册 / 托管 / 自启）→ 无对应；<code>serve</code> + systemd 自行编排</td>
+<td>✅</td>
+<td>中心 daemon（注册 / 托管 / 自启）→ <code>oc-daemon</code>（注册 / 启停 / 日志 / systemd 用户服务自启）</td>
 </tr>
 <tr>
 <td>22</td>
 <td>专用 Agent</td>
 <td>🟡</td>
-<td>业务管线专用 Agent → 未对应（按需自建）</td>
+<td>业务管线专用 Agent → 未预置（按需自建；资产 <code>agent</code> 类型可分发）</td>
 </tr>
 <tr>
 <td>23</td>
@@ -191,13 +191,13 @@
 <tbody>
 <tr>
 <td>多平台一键安装</td>
-<td><code>bootstrap.sh</code>（拉取 + 部署 + 隐私提示）+ <code>init.sh</code>（初始化 / 编译 / 自检）</td>
+<td><code>bootstrap.sh</code>（拉取 + 部署 + 隐私提示 + 平台检测）+ <code>init.sh</code>（初始化 / 编译 / 自检）；Linux 主线、macOS 实验提示、Windows 引导 WSL</td>
 <td>覆盖（Linux 主线）</td>
 </tr>
 <tr>
 <td>图形界面</td>
-<td><code>opencode web</code>（启动 server 并打开 Web 界面）；<code>opencode serve</code>（headless，供 API / 桥接）</td>
-<td>等价（形态不同）</td>
+<td><code>opencode web</code>：会话工作台（会话列表 / 聊天 / 命令面板 / 目录与文件选择 / 模型与设置等对话框）；<code>opencode serve</code>（headless，全量 API，供桥接）</td>
+<td>等价（形态不同，已实测）</td>
 </tr>
 <tr>
 <td>密钥加密存储</td>
@@ -223,8 +223,8 @@
 <tbody>
 <tr>
 <td>模型分档（轻量 / 主力 / 视觉）</td>
-<td><code>small_model</code>（轻任务与子代理）+ <code>model</code>（主力）+ <code>model: small</code> 别名；视觉直连多模态模型</td>
-<td>等价（无虚拟档位）</td>
+<td><code>auto/flash</code>（轻量）/ <code>auto</code> · <code>auto/pro</code>（主力）/ <code>auto/vision</code>（视觉，<code>vision_model</code> 可配）档位别名 + <code>small_model</code> · <code>model: small</code></td>
+<td>覆盖</td>
 </tr>
 <tr>
 <td>模型目录自动发现</td>
@@ -266,6 +266,11 @@
 <tr>
 <td>依赖解析</td>
 <td><code>asset pull @launcher/xxx</code> 按 <code>meta.json</code> 的 <code>requires</code> 自动拉依赖</td>
+<td>补齐</td>
+</tr>
+<tr>
+<td>启动命令生成</td>
+<td><code>asset bin @launcher/x</code> → <code>~/.config/opencode/bin/x</code> 可执行包装器（幂等 / <code>--remove</code> / <code>OPENCODE_BIN_DIR</code> 可覆盖）；TUI 面板「安装到项目 / 生成命令」动作</td>
 <td>补齐</td>
 </tr>
 </tbody>
@@ -465,7 +470,7 @@
 </tr>
 <tr>
 <td>权限四模式 + allow/deny 通配</td>
-<td><code>permission</code> 模式 + 通配匹配</td>
+<td><code>permission</code> per-tool allow/ask/deny + 通配匹配 + <code>run --mode strict/balanced/accept-edits/trust</code> 四档</td>
 <td>源码级确认</td>
 </tr>
 <tr>
@@ -532,13 +537,51 @@
 </tr>
 <tr>
 <td>多工作区托管</td>
-<td>无中心 daemon；<code>serve</code> 单实例 + systemd 自行编排（见「差异与缺口」）</td>
-<td>差异</td>
+<td><code>oc-daemon</code>：多工作区注册 / 启停 / 重启 / 状态 / 日志 / systemd 用户服务自启（<code>bin/oc-daemon</code>）</td>
+<td>覆盖</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="_11">三、本次新增能力</h2>
+<h2 id="_11">三、定制版新增能力</h2>
+<h3 id="2026-09-29">本轮补齐（2026-09-29）</h3>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>是什么</th>
+<th>落点 / 开关</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>模型虚拟档位</strong></td>
+<td><code>auto</code> / <code>auto/pro</code> / <code>auto/flash</code> / <code>auto/vision</code> 别名全链路解析（agent 配置 / 配置文件 / <code>--model</code>），分别映射主力 / 轻量 / 视觉模型；<code>small</code> 语义统一</td>
+<td><code>opencode.json</code>（<code>vision_model</code> 可选）</td>
+</tr>
+<tr>
+<td><strong>多工作区 daemon</strong></td>
+<td><code>oc-daemon</code>：工作区注册 / 启停 / 重启 / 状态 / 日志 / systemd 用户服务自启；端口自动分配、幂等</td>
+<td><code>bin/oc-daemon</code>（init.sh 同步）</td>
+</tr>
+<tr>
+<td><strong>资产命令生成</strong></td>
+<td><code>asset bin @launcher/x</code> 生成 <code>bin/x</code> 可执行命令（幂等 / <code>--remove</code>）；TUI 面板「安装到项目 / 生成命令」</td>
+<td><code>asset-manager</code> / TUI 面板</td>
+</tr>
+<tr>
+<td><strong>四档审批模式</strong></td>
+<td><code>opencode run --mode strict/balanced/accept-edits/trust</code>；<code>--auto</code> 等价于 <code>trust</code></td>
+<td><code>opencode run</code></td>
+</tr>
+<tr>
+<td><strong>平台检测</strong></td>
+<td>bootstrap / init 平台识别：Linux 主线、macOS 实验提示、Windows 引导 WSL</td>
+<td><code>bootstrap.sh</code> / <code>init.sh</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_12">前轮新增（子代理与治理）</h3>
 <table>
 <thead>
 <tr>
@@ -580,16 +623,19 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_12">新增能力速览（一句话）</h3>
+<h3 id="_13">新增能力速览（一句话）</h3>
 <ul>
 <li><strong>省 token</strong>：探索走小模型（<code>model: small</code>），并行有上限（<code>subagent_max_concurrency</code>）；</li>
 <li><strong>更安全</strong>：worktree 合并走 fast-forward 且冲突自动 abort，删除有守护；</li>
 <li><strong>可度量</strong>：评估从「答对否」扩到「快 / 省 / 简洁否」；</li>
 <li><strong>可观测</strong>：后台任务带回退出码并主动通知；</li>
-<li><strong>更诚实</strong>：调试与目标澄清技能强制区分事实与假设、标注信心。</li>
+<li><strong>更诚实</strong>：调试与目标澄清技能强制区分事实与假设、标注信心；</li>
+<li><strong>全档位</strong>：模型虚拟档位 <code>auto/*</code> 与 <code>small</code> 统一，轻活重活各归其位；</li>
+<li><strong>多工作区</strong>：<code>oc-daemon</code> 托管多个工作区服务并支持开机自启；</li>
+<li><strong>可移植</strong>：launcher 一键生成可执行命令，平台边界明确（Windows → WSL 指引）。</li>
 </ul>
 <hr />
-<h2 id="_13">四、以「其他方式」实现的差异点</h2>
+<h2 id="_14">四、以「其他方式」实现的差异点</h2>
 <p>以下能力参考实现有独立机制，定制版通过<strong>配置层</strong>等价实现（行为可达，实现路径不同）：</p>
 <table>
 <thead>
@@ -623,7 +669,7 @@
 </tbody>
 </table>
 <hr />
-<h2 id="_14">五、差异与缺口</h2>
+<h2 id="_15">五、差异与缺口</h2>
 <table>
 <thead>
 <tr>
@@ -634,41 +680,31 @@
 </thead>
 <tbody>
 <tr>
-<td>多工作区托管</td>
-<td>无中心 daemon（注册 / 托管 / 开机自启）</td>
-<td><code>serve</code> 单实例 + systemd 单元自行编排</td>
-</tr>
-<tr>
-<td>模型虚拟档位</td>
-<td>无「轻量 / 主力 / 视觉」三档位绑定</td>
-<td><code>small_model</code> + <code>model: small</code> 近似轻量档；视觉选多模态模型</td>
-</tr>
-<tr>
-<td>Web 工作台面板</td>
-<td>面板构成与深度未逐一比对</td>
-<td>TUI 主线；<code>todo</code> / <code>plan</code> 工具近似「待办计划」</td>
-</tr>
-<tr>
-<td>快捷启动生成器</td>
-<td>无引导式「Browse → Install」生成启动脚本</td>
-<td>资产 <code>pull</code> + <code>@launcher/*</code> + <code>asset run</code></td>
+<td>平台覆盖</td>
+<td>一键脚本以 Linux 为主线（macOS 实验提示 / Windows 引导 WSL）</td>
+<td>按需补平台验证或手动步骤</td>
 </tr>
 <tr>
 <td>网关免配置绑定</td>
-<td>无首用绑定与目录自动刷新</td>
-<td><code>provider</code> 手工配置 + 模型目录发现</td>
+<td>无首用扫码绑定与目录定时刷新（属网关侧能力）</td>
+<td><code>provider</code> 手工配置 + 模型目录发现（<code>/models</code>）</td>
 </tr>
 <tr>
-<td>平台覆盖</td>
-<td>一键脚本面向 Linux</td>
-<td>macOS / Windows 按需补平台分支或手动步骤</td>
+<td>Web 工作台面板</td>
+<td>Web 端为会话工作台形态（列表 / 聊天 / 命令面板 / 选择器与对话框），非多面板工作台</td>
+<td>TUI 主线；<code>serve</code> / <code>web</code> 全量 API 可用</td>
+</tr>
+<tr>
+<td>专用 Agent</td>
+<td>业务管线专用 Agent 未预置（按需类）</td>
+<td>按需自建；资产 <code>agent</code> 类型可分发</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="_15">六、边界说明</h2>
+<h2 id="_16">六、边界说明</h2>
 <ul>
-<li><strong>对齐结论</strong>：参考实现功能点在<strong>维度级</strong>均有对应（✅ 15 / 🔵 6 / 🟡 2），缺口均附替代方式、按需补充。</li>
+<li><strong>对齐结论</strong>：参考实现功能点在<strong>维度级</strong>均有对应（✅ 18 / 🔵 4 / 🟡 1）；第二轮补齐落地 4 项（多工作区 daemon / 模型档位别名 / 命令生成 / 审批四档），Web 面板深度已实测核对；剩余 🟡 为按需类（业务专用 Agent）。</li>
 <li><strong>内部资产与公开资产分离</strong>：内部专用资产与公开通用资产分开管理，本仓库只承载公开通用能力；受隐私红线约束，含组织信息的文档不进入公开仓库。</li>
 <li><strong>命名</strong>：文档统一用「参考实现」指代内部 Agent 运行时，不出现内部域名、主机名与人员信息。</li>
 <li><strong>工具命名约定</strong>：单文件单工具（<code>tool({ description, args, execute })</code>）+ CLI 入口（<code>bin/&lt;name&gt;</code> 由 <code>init.sh</code> 生成）。</li>
@@ -698,13 +734,15 @@
 <li><a href="#_10">通知与运维</a></li>
 </ul>
 </li>
-<li><a href="#_11">三、本次新增能力</a><ul>
-<li><a href="#_12">新增能力速览（一句话）</a></li>
+<li><a href="#_11">三、定制版新增能力</a><ul>
+<li><a href="#2026-09-29">本轮补齐（2026-09-29）</a></li>
+<li><a href="#_12">前轮新增（子代理与治理）</a></li>
+<li><a href="#_13">新增能力速览（一句话）</a></li>
 </ul>
 </li>
-<li><a href="#_13">四、以「其他方式」实现的差异点</a></li>
-<li><a href="#_14">五、差异与缺口</a></li>
-<li><a href="#_15">六、边界说明</a></li>
+<li><a href="#_14">四、以「其他方式」实现的差异点</a></li>
+<li><a href="#_15">五、差异与缺口</a></li>
+<li><a href="#_16">六、边界说明</a></li>
 </ul>
 </div>
 
