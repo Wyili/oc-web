@@ -24,7 +24,7 @@
   <main class="content">
     <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 快速上手 <span class="sep">/</span> <span class="current">资产与常用命令</span></nav>
     <article class="markdown"><blockquote>
-<p>定制版把可复用能力（子代理、工具、技能、插件、启动器）打包成<strong>资产</strong>，像包管理器一样 <code>list / pull / run / setup / export</code>。资产不进主仓库——它们统一放在独立资产仓库，按需拉取。本文给出两类入口、操作速查与本地开发（mirror）。</p>
+<p>定制版把可复用能力（子代理、工具、技能、插件、启动器）打包成<strong>资产</strong>，像包管理器一样 <code>list / pull / install / run / setup / bin / export</code>。资产不进主仓库——它们统一放在独立资产仓库，按需拉取。本文给出两类入口、操作速查与本地开发（mirror）。</p>
 </blockquote>
 <h2 id="_1">一、五类资产</h2>
 <table>
@@ -67,7 +67,7 @@
 <h2 id="_2">二、两条入口</h2>
 <p><code>asset_manager</code> <strong>不是 shell 命令</strong>，有两类入口：</p>
 <ul>
-<li><strong>TUI 插件命令（推荐，不经 LLM）</strong>：输入 <code>/</code> 选择 <code>/asset_manager</code> 回车 → 交互式列表（<code>✅</code> 已拉取 / <code>⬜</code> 未拉取），选中 <code>⬜</code> 直接下载。</li>
+<li><strong>TUI 插件命令（推荐，不经 LLM）</strong>：输入 <code>/</code> 选择 <code>/asset_manager</code> 回车 → 交互式列表（<code>✅</code> 已拉取 / <code>⬜</code> 未拉取），选中后可执行动作：拉取更新 / 安装到项目 / 生成命令（launcher）。</li>
 <li><strong>AI 工具 / CLI（经 LLM 或 <code>bun</code>）</strong>：对话中让 AI 调用 <code>asset_manager</code> 工具；命令行用 <code>asset</code>（<code>init.sh</code> 生成的 wrapper，直接 <code>exec bun</code> 到工具，不经过 LLM）。</li>
 </ul>
 <h2 id="_3">三、操作速查</h2>
@@ -112,6 +112,11 @@
 <td><code>asset run @launcher/oc-default</code></td>
 </tr>
 <tr>
+<td><code>bin</code></td>
+<td>生成可执行命令：launcher → <code>~/.config/opencode/bin/&lt;名&gt;</code>（幂等；<code>--remove</code> 撤销）</td>
+<td><code>asset bin @launcher/system-info</code></td>
+</tr>
+<tr>
 <td><code>setup</code></td>
 <td>部署 skill/plugin 到项目 <code>.opencode/skills|plugins/</code>（目录扫描即生效）</td>
 <td><code>asset setup @skill/docx</code></td>
@@ -136,6 +141,7 @@
 <p>补充：</p>
 <ul>
 <li><code>pull @launcher/xxx</code> 会读 <code>meta.json</code> 的 <code>requires</code> 字段，<strong>自动拉取依赖组件</strong>（如 launcher 依赖的 tool）；</li>
+<li><code>bin</code> 仅支持 <code>launcher</code> 类型：在 <code>~/.config/opencode/bin/</code> 生成同名包装器（等价 <code>asset run @launcher/xxx</code>），名字即命令、已在 PATH；重复执行幂等，<code>--remove</code> 撤销；</li>
 <li><code>setup</code> 只支持 <code>skill</code> 与 <code>plugin</code>：skill → <code>.opencode/skills/</code>，plugin → <code>.opencode/plugins/</code>，部署后目录扫描即生效；</li>
 <li><code>asset new @type/name</code> 创建模板（走 <code>new-asset</code> 工具，5 类都支持）；<code>asset identity "&lt;昵称&gt;" "&lt;noreply 邮箱&gt;"</code> 注册发布身份。</li>
 </ul>

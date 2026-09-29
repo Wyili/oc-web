@@ -407,10 +407,10 @@
 <ul>
 <li>可整体给一个值：<code>"permission": "ask"</code> 等价于对所有工具生效（<code>"*": "ask"</code>）；</li>
 <li>常用键：<code>read</code> / <code>edit</code> / <code>glob</code> / <code>grep</code> / <code>list</code> / <code>bash</code> / <code>task</code> / <code>webfetch</code> / <code>websearch</code> / <code>lsp</code> / <code>skill</code> 等；</li>
-<li>启动参数 <code>opencode --auto</code> 自动批准<strong>未被显式拒绝</strong>的权限（危险，谨慎使用）。</li>
+<li>启动参数 <code>opencode --auto</code> 自动批准<strong>未被显式拒绝</strong>的权限（危险，谨慎使用；等价 <code>--mode trust</code>）；非交互执行另有 <code>opencode run --mode strict|balanced|accept-edits|trust</code> 四档预设。</li>
 </ul>
 <blockquote>
-<p>内部「<strong>参考实现</strong>」用 <code>approval_mode</code> 暴露四个预设（<code>strict</code> / <code>balanced</code> / <code>accept_edits</code> / <code>trust</code>）。opencode 定制版没有同名预设开关，而是用上面的<strong>工具级规则</strong>表达等价效果——例如「平衡」≈ 常见工具 <code>allow</code>、危险操作 <code>ask</code>。</p>
+<p>内部「<strong>参考实现</strong>」用 <code>approval_mode</code> 暴露四个预设（<code>strict</code> / <code>balanced</code> / <code>accept_edits</code> / <code>trust</code>）。定制版分两处表达：<strong>TUI 内</strong>用上面的<strong>工具级规则</strong>（例如「平衡」≈ 常见工具 <code>allow</code>、危险操作 <code>ask</code>）；<strong>非交互执行</strong>用 <code>opencode run --mode strict|balanced|accept-edits|trust</code> 四档预设（<code>--auto</code> ≡ <code>trust</code>）。</p>
 </blockquote>
 <h2 id="_7">七、上下文与压缩</h2>
 <table>

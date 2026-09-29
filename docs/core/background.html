@@ -44,6 +44,10 @@
 <td>后台跑，需要时 <code>output</code> 看日志</td>
 </tr>
 <tr>
+<td>跨会话常驻服务（<code>opencode serve</code>）</td>
+<td>交给 <code>oc-daemon</code> 托管：注册 / 启停 / 日志 / systemd 自启（见<a href="../appendix/commands.html">命令速查</a>）</td>
+</tr>
+<tr>
 <td>可能产生大量输出的命令</td>
 <td>后台跑（输出落盘，不占对话）</td>
 </tr>
@@ -271,7 +275,8 @@
 <li><strong>靠退出码判断成败</strong>：记录里有 <code>exit_code</code> 与 <code>finished_at</code>，不要只凭日志有无内容猜；</li>
 <li><strong>要提醒就配通知</strong>：默认桌面通知，无桌面环境用 <code>MA_NO_DESKTOP_NOTIFY=1</code> 关闭或改用飞书；</li>
 <li><strong>定时提醒用 cron</strong>：登记的提醒会在后续会话中作为上下文浮现；</li>
-<li><strong>跑在隔离目录</strong>：结合 <code>workdir</code> 指向 worktree，长命令不影响主工作区。</li>
+<li><strong>跑在隔离目录</strong>：结合 <code>workdir</code> 指向 worktree，长命令不影响主工作区；</li>
+<li><strong>常驻服务用 <code>oc-daemon</code></strong>：长期运行的 <code>opencode serve</code>（多工作区）交给 <code>oc-daemon</code> 托管——注册 / 启停 / 日志 / systemd 自启一条命令。</li>
 </ol></article>
     <nav class="pager">
       <a class="pager-link prev" href="../core/token-economy.html"><span>← 上一篇</span><strong>省 token 与上下文管理</strong></a>

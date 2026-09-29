@@ -115,39 +115,36 @@ set -a; source ~/.config/secrets.env; set +a
 <li>实现：<code>aes-256-gcm</code>，随机 12 字节 IV + 认证标签（tag），密文以 <code>{ iv, tag, value }</code> 结构存 <code>~/.config/opencode/secrets.enc</code>；主密钥存 <code>~/.config/opencode/.masterkey</code>（首次使用自动生成 32 字节随机密钥，base64 编码）。</li>
 <li>用途：需要比明文文件更强保护、或不想让值以明文出现在磁盘时使用。</li>
 </ul>
-<h2 id="_3">四、权限模式</h2>
-<p><code>opencode.json</code> 的 <code>permission</code> 字段（或启动时 <code>--mode</code>）控制操作审批粒度：</p>
+<h2 id="_3">四、权限与审批</h2>
+<p>审批由两层控制：<code>opencode.json</code> 的 <code>permission</code> 字段（工具级 <code>allow</code>/<code>ask</code>/<code>deny</code>，TUI 内生效）+ 非交互执行的 <code>--mode</code> 四档预设：</p>
 <table>
 <thead>
 <tr>
-<th>模式</th>
+<th><code>run --mode</code> 档位</th>
 <th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>trust</code></td>
-<td>自动批准所有操作</td>
-</tr>
-<tr>
-<td><code>balanced</code></td>
-<td>平衡：常见操作自动批准，危险操作确认</td>
-</tr>
-<tr>
-<td><code>strict</code></td>
-<td>严格：每次操作确认</td>
+<td>自动批准所有未显式拒绝的操作（<code>--auto</code> 等价）</td>
 </tr>
 <tr>
 <td><code>accept-edits</code></td>
-<td>自动接受编辑</td>
+<td>自动接受编辑/写入类；需 permission 将编辑设为 <code>ask</code>/<code>deny</code> 才产生差异</td>
 </tr>
 <tr>
-<td>启动参数</td>
-<td><code>opencode --auto</code> 自动批准未被显式拒绝的权限</td>
+<td><code>balanced</code></td>
+<td>默认档；非交互下拒绝未预授权的询问</td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td>不弱于默认（非交互下与 <code>balanced</code> 等同；交互场景差异留待后续）</td>
 </tr>
 </tbody>
 </table>
 <ul>
+<li>TUI 交互场景的批准/拒绝由 <code>permission</code> 规则 + 原生询问对话框表达；</li>
 <li>子代理可单独声明权限（如 explorer 只读：<code>"*": deny</code> + <code>read/glob/grep: allow</code>），子代理权限从父会话派生合并；</li>
 <li>每次工具调用都会写审计记录（<code>~/.config/opencode/audit.log</code>），授权询问也会被审计。</li>
 </ul>
@@ -243,7 +240,7 @@ chmod 600 ~/.config/secrets.env ~/.config/opencode/.masterkey
 <ol>
 <li>密钥只写 <code>secrets.env</code>（纯 <code>KEY=value</code>，0600），不写 bashrc；</li>
 <li>改完密钥开新终端，或 <code>set -a; source …; set +a</code>；</li>
-<li>危险项目用 <code>strict</code>/<code>balanced</code> 权限模式，探索类子代理用只读权限；</li>
+<li>危险项目收紧到 <code>strict</code>/<code>balanced</code> 档（非交互：<code>opencode run --mode strict</code>），探索类子代理用只读权限；</li>
 <li>提交前跑 <code>privacy git</code>；敏感词沉淀进 <code>sensitive-patterns.txt</code>；</li>
 <li>换机 / 重装前 <code>init.sh --backup</code>，还原后重跑密钥自检；</li>
 <li>见 <a href="models.html">模型配置</a> 的 provider 脱敏写法，与本文配合使用。</li>
@@ -261,7 +258,7 @@ chmod 600 ~/.config/secrets.env ~/.config/opencode/.masterkey
 <li><a href="#_1">一、密钥存哪里</a></li>
 <li><a href="#_2">二、注入机制（谁从哪里读）</a></li>
 <li><a href="#env-store">三、加密存储（env-store）</a></li>
-<li><a href="#_3">四、权限模式</a></li>
+<li><a href="#_3">四、权限与审批</a></li>
 <li><a href="#privacy">五、隐私门禁（privacy 工具）</a></li>
 <li><a href="#sensitive-scansh">六、钩子门禁（sensitive-scan.sh）</a></li>
 <li><a href="#_4">七、隐私红线（最高优先级）</a></li>

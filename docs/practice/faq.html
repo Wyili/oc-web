@@ -64,8 +64,8 @@
 <tr>
 <td>5</td>
 <td>工具调用被拒绝</td>
-<td><code>permission</code> 处于 <code>strict</code> / <code>balanced</code></td>
-<td>切 <code>trust</code>，或启动加 <code>--auto</code>；注意显式拒绝的操作 <code>--auto</code> 也不会放行</td>
+<td><code>permission</code> 规则过严，或 <code>run</code> 档位为 <code>strict</code> / <code>balanced</code></td>
+<td>非交互改用 <code>opencode run --mode accept-edits</code>（或 <code>trust</code>）；<code>--auto</code> ≡ <code>trust</code>；显式拒绝的操作不会放行</td>
 </tr>
 <tr>
 <td>6</td>
@@ -356,7 +356,7 @@ opencode run &quot;回复ok&quot;         # 实际调用验证；报 401 回查�
 <li><strong>看配置</strong>——<code>opencode debug config</code>（provider 是否在、<code>apiKey</code> 是否为空）；</li>
 <li><strong>认证失败</strong>——查 <code>secrets.env</code> 是否有对应 key，<code>set -a; source …; set +a</code> 后重试；</li>
 <li><strong>上下文过大</strong>——<code>/compact</code> 或 <code>/new</code>；</li>
-<li><strong>权限被拒</strong>——切 <code>permission</code> 模式或启动加 <code>--auto</code>；</li>
+<li><strong>权限被拒</strong>——调整 <code>permission</code> 规则；非交互场景用 <code>opencode run --mode accept-edits</code>（或 <code>trust</code>），或加 <code>--auto</code>；</li>
 <li><strong>仍不明</strong>——<code>opencode --print-logs --log-level DEBUG</code> 拿到日志，再按<a href="diagnosis.html">快速定位问题</a>分类事实与假设。</li>
 </ol>
 <blockquote>
