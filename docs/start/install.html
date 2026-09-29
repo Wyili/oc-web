@@ -24,10 +24,25 @@
   <main class="content">
     <nav class="breadcrumb"><a href="../index.html">首页</a> <span class="sep">/</span> 快速上手 <span class="sep">/</span> <span class="current">安装与配置</span></nav>
     <article class="markdown"><blockquote>
-<p>一句话：<strong><code>cd ~/opencode &amp;&amp; ./init.sh</code></strong> 完成全部公共配置；新机器先跑 <code>bootstrap.sh</code>，再 <code>./init.sh --build</code> 编译定制版二进制，最后 <code>source ~/.bashrc</code>。</p>
+<p>顺序：<strong>先安装代码，再初始化</strong>。新机器 ① 拉代码 <code>curl -fsSL https://raw.githubusercontent.com/Wyili/opencode/dev/bootstrap.sh | bash</code> → ② 初始化 + 编译 <code>./init.sh --build</code> → ③ <code>source ~/.bashrc</code>；已有仓库直接 <code>cd ~/opencode &amp;&amp; ./init.sh</code>。</p>
 </blockquote>
 <p>opencode 定制版 = <strong>本仓库源码编译</strong>。二进制不进 git（<code>dist/</code> 被忽略），所以新机器必须本地编译一次（不要装官方版）。<code>init.sh</code> 负责把仓库里的运行时配置层部署为全局配置（<code>~/.config/opencode/</code>）。</p>
-<h2 id="_1">一、三种初始化方式</h2>
+<h2 id="_1">一、新机器安装</h2>
+<pre><code class="language-bash"># ① 拉代码 + 部署全局配置（自动装 bun、生成 opencode.json、同步全局、提示隐私信息）
+curl -fsSL https://raw.githubusercontent.com/Wyili/opencode/dev/bootstrap.sh | bash
+
+# ② 初始化 + 编译定制版二进制（含本仓库所有定制功能）
+opencode init --build          # 或 cd ~/opencode &amp;&amp; ./init.sh --build
+
+# ③ 新终端生效
+source ~/.bashrc
+</code></pre>
+<ul>
+<li><code>bootstrap.sh</code>：默认 clone 到 <code>~/opencode</code>（可用 <code>OPENCODE_INSTALL_DIR</code> 改），随后调用 <code>init.sh</code>；</li>
+<li>编译需网络（models.dev 模型清单 + npm 镜像）；离线编译需先缓存 <code>~/.cache/opencode/models.json</code>；</li>
+<li>产物：<code>packages/opencode/dist/opencode-linux-x64/bin/opencode</code>，自动 symlink 到 <code>~/.local/bin/opencode</code>。</li>
+</ul>
+<h2 id="_2">二、三种初始化方式</h2>
 <table>
 <thead>
 <tr>
@@ -63,21 +78,6 @@
 <li><strong>全局</strong>（<code>~/.config/opencode/</code>）放本机私有：密钥、私有 provider、记忆（非 git）；</li>
 <li><strong>项目</strong>（<code>&lt;项目&gt;/.opencode/</code>）放项目共享：子代理、技能、工作场景（可提交 git）；</li>
 <li>本仓库自身就是「一个项目」：根目录已有 <code>.opencode/</code>，全局通过 <code>instructions</code> / <code>skills.paths</code> 引用它，无需再跑 <code>init-project</code>。</li>
-</ul>
-<h2 id="_2">二、新机器安装</h2>
-<pre><code class="language-bash"># ① 拉仓库 + 部署全局配置（自动装 bun、生成 opencode.json、同步全局、提示隐私信息）
-curl -fsSL https://raw.githubusercontent.com/Wyili/opencode/dev/bootstrap.sh | bash
-
-# ② 编译定制版二进制（含本仓库所有定制功能）
-opencode init --build          # 或 cd ~/opencode &amp;&amp; ./init.sh --build
-
-# ③ 新终端生效
-source ~/.bashrc
-</code></pre>
-<ul>
-<li><code>bootstrap.sh</code>：默认 clone 到 <code>~/opencode</code>（可用 <code>OPENCODE_INSTALL_DIR</code> 改），随后调用 <code>init.sh</code>；</li>
-<li>编译需网络（models.dev 模型清单 + npm 镜像）；离线编译需先缓存 <code>~/.cache/opencode/models.json</code>；</li>
-<li>产物：<code>packages/opencode/dist/opencode-linux-x64/bin/opencode</code>，自动 symlink 到 <code>~/.local/bin/opencode</code>。</li>
 </ul>
 <h2 id="_3">三、依赖</h2>
 <table>
@@ -417,8 +417,8 @@ opencode run &quot;回复ok&quot; --model openai/gpt-5.4   # 实际调用验证�
       <div class="toc-title">本页目录</div>
       <div class="toc">
 <ul>
-<li><a href="#_1">一、三种初始化方式</a></li>
-<li><a href="#_2">二、新机器安装</a></li>
+<li><a href="#_1">一、新机器安装</a></li>
+<li><a href="#_2">二、三种初始化方式</a></li>
 <li><a href="#_3">三、依赖</a></li>
 <li><a href="#initsh">四、init.sh 自动完成什么</a></li>
 <li><a href="#_4">五、覆盖策略</a></li>
