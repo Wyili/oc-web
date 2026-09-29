@@ -143,6 +143,7 @@
 <li><code>pull @launcher/xxx</code> 会读 <code>meta.json</code> 的 <code>requires</code> 字段，<strong>自动拉取依赖组件</strong>（如 launcher 依赖的 tool）；</li>
 <li><code>bin</code> 仅支持 <code>launcher</code> 类型：在 <code>~/.config/opencode/bin/</code> 生成同名包装器（等价 <code>asset run @launcher/xxx</code>），名字即命令、已在 PATH；重复执行幂等，<code>--remove</code> 撤销；</li>
 <li><code>setup</code> 只支持 <code>skill</code> 与 <code>plugin</code>：skill → <code>.opencode/skills/</code>，plugin → <code>.opencode/plugins/</code>，部署后目录扫描即生效；</li>
+<li><code>push</code> 发布 <code>@skill/xxx</code> 时可直接从仓库运行时目录 <code>.opencode/skills/&lt;name&gt;/</code> 取源（无需先复制到缓存）；寻源顺序：项目 <code>.opencode/assets/</code> → 运行时 <code>.opencode/skills/</code> → 全局缓存，取与仓库有差异者优先；</li>
 <li><code>asset new @type/name</code> 创建模板（走 <code>new-asset</code> 工具，5 类都支持）；<code>asset identity "&lt;昵称&gt;" "&lt;noreply 邮箱&gt;"</code> 注册发布身份。</li>
 </ul>
 <h2 id="_4">四、资产来源与查找优先级</h2>

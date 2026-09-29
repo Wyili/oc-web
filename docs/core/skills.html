@@ -64,7 +64,7 @@
 </ul>
 <p><code>task</code> 工具拉起的子代理同样能加载技能——所以「探索/实施/审查」各自可以挂上对应的技能。</p>
 <h2 id="_3">三、内置技能一览</h2>
-<p>定制版内置 21 个技能（<code>name</code> 带 <code>sk_</code> 前缀的为自带短标识）：</p>
+<p>定制版内置 35 个技能（<code>name</code> 带 <code>sk_</code> 前缀的为自带短标识）：</p>
 <table>
 <thead>
 <tr>
@@ -157,10 +157,67 @@
 <td><code>zed-docs</code></td>
 <td>搜索和浏览 Zed 编辑器官方文档</td>
 </tr>
+<tr>
+<td><code>canvas-design</code></td>
+<td>海报与视觉艺术设计（PNG / PDF 输出）</td>
+</tr>
+<tr>
+<td><code>theme-factory</code></td>
+<td>为幻灯片 / 文档 / 网页套用 10 套专业配色主题</td>
+</tr>
+<tr>
+<td><code>algorithmic-art</code></td>
+<td>用 p5.js 创作算法艺术（种子随机 / 参数化探索）</td>
+</tr>
+<tr>
+<td><code>slack-gif-creator</code></td>
+<td>Slack 动图 GIF 制作（约束校验 / 动画构思）</td>
+</tr>
+<tr>
+<td><code>frontend-design</code></td>
+<td>前端界面视觉方向与排版（避免模板化）</td>
+</tr>
+<tr>
+<td><code>web-artifacts-builder</code></td>
+<td>复杂网页工件构建（React / Tailwind / shadcn）</td>
+</tr>
+<tr>
+<td><code>webapp-testing</code></td>
+<td>本地 Web 应用测试（Playwright：功能验证 / 截图 / 日志）</td>
+</tr>
+<tr>
+<td><code>mcp-builder</code></td>
+<td>构建高质量 MCP 服务器（Python / TypeScript）</td>
+</tr>
+<tr>
+<td><code>claude-api</code></td>
+<td>Claude API 开发参考（模型 / 价格 / 流式 / 工具 / 缓存）</td>
+</tr>
+<tr>
+<td><code>doc-coauthoring</code></td>
+<td>文档协作撰写（提案 / 规格 / 决策文档）</td>
+</tr>
+<tr>
+<td><code>internal-comms</code></td>
+<td>对内沟通写作（周报 / 汇报 / 公告 / FAQ / 事故报告）</td>
+</tr>
+<tr>
+<td><code>brand-guidelines</code></td>
+<td>品牌规范：配色与字体套用</td>
+</tr>
+<tr>
+<td><code>academy-guide</code></td>
+<td>Claude 官方课程引导</td>
+</tr>
+<tr>
+<td><code>discernment-nudge</code></td>
+<td>重要建议的审慎提示（行动前辨别与核验）</td>
+</tr>
 </tbody>
 </table>
 <blockquote>
-<p>另有 3 个<strong>随插件分发</strong>的技能 <code>jira-cli</code> / <code>gerrit-cli</code> / <code>kb-cli</code>（加载自插件目录，非 git），分别对接 Jira / Gerrit / Confluence。</p>
+<p>另有 4 个<strong>随插件分发</strong>的技能 <code>jira-cli</code> / <code>gerrit-cli</code> / <code>kb-cli</code> / <code>feishu-sheet</code>（加载自插件目录，非 git），分别对接 Jira / Gerrit / Confluence / 飞书表格。</p>
+<p><code>docx</code> / <code>pdf</code> / <code>pptx</code> / <code>xlsx</code> / <code>skill-creator</code> 与新增的 14 个通用技能（<code>canvas-design</code> … <code>discernment-nudge</code>）来自 Anthropic 公开技能库，均通过资产库分发（<code>asset pull @skill/&lt;name&gt;</code>）。</p>
 </blockquote>
 <h2 id="_4">四、写一个自定义技能</h2>
 <h3 id="41-frontmatter">4.1 frontmatter 字段</h3>
