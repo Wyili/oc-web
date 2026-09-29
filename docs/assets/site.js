@@ -46,7 +46,7 @@
 
   function basePrefix() {
     // 当前页面相对站点根的前缀：取自顶栏 brand 链接（构建时按页面深度生成），
-    // 天然适配任意部署路径——域名根、子路径（如 /oc-lark-web/docs/）、本地预览
+    // 天然适配任意部署路径——域名根、子路径（如 /oc-web/docs/）、本地预览
     var brand = document.querySelector("a.brand");
     if (brand) {
       var href = brand.getAttribute("href") || "";
